@@ -4,6 +4,7 @@
   "directories": {
     "output": "release"
   },
+  "asar": true,
   "files": [
     {
       "from": "apps/pos-desktop/electron/dist",
@@ -16,8 +17,7 @@
     {
       "from": "database/schema",
       "to": "schema"
-    },
-    "package.json"
+    }
   ],
   "extraMetadata": {
     "main": "electron/main.js"

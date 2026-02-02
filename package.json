@@ -2,10 +2,10 @@
   "name": "terencio-pos-monorepo",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @terencio/domain build && concurrently -k \"pnpm --filter @terencio/ui dev\" \"pnpm --filter @terencio/electron dev\"",
+    "dev": "concurrently -k \"pnpm --filter @terencio/ui dev\" \"pnpm --filter @terencio/electron dev\"",
     "build": "pnpm --filter @terencio/domain build && pnpm --filter @terencio/ui build && pnpm --filter @terencio/electron build",
     "dist": "pnpm clean && pnpm build && electron-builder",
-    "clean": "rimraf node_modules packages/*/node_modules apps/*/node_modules apps/*/*/node_modules dist release"
+    "clean": "rimraf dist release apps/**/dist apps/**/node_modules"
   },
   "devDependencies": {
     "concurrently": "^8.2.0",
@@ -14,5 +14,12 @@
     "typescript": "^5.3.0",
     "wait-on": "^7.2.0",
     "rimraf": "^5.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild",
+      "sqlite3"
+    ]
   }
 }

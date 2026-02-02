@@ -6,7 +6,6 @@ const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
-  console.log('Creating window...');
   mainWindow = new BrowserWindow({
     width: 1024,
     height: 768,
@@ -14,34 +13,28 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      devTools: isDev,
     },
   });
 
   if (isDev) {
-    console.log('Loading development URL...');
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
+    // In Prod: dist/main.js is inside "electron/" folder
+    // UI is inside "ui/" folder
     mainWindow.loadFile(path.join(__dirname, '../ui/index.html'));
   }
 }
 
 app.whenReady().then(() => {
-  console.log('App Ready');
-  try {
-    initDb();
-  } catch (err) {
-    console.error('DB Init failed:', err);
-  }
-  
+  initDb();
   createWindow();
 
-  app.on('activate', function () {
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-app.on('window-all-closed', function () {
+app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });

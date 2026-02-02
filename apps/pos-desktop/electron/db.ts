@@ -7,22 +7,26 @@ export const initDb = () => {
   let schemaPath: string;
 
   if (isDev) {
-    // In Dev: Navigate up from apps/pos-desktop/electron/dist/ to database/schema
+    // DEV: defined relative to apps/pos-desktop/electron/dist/db.js
+    // Go up: dist -> electron -> pos-desktop -> apps -> root -> database
     schemaPath = path.join(__dirname, '../../../../database/schema/schema.sql');
   } else {
-    // In Prod: configured in electron-builder to be in resources/app/schema
-    schemaPath = path.join(process.resourcesPath, 'app/schema/schema.sql');
+    // PROD: Defined in electron-builder.
+    // We mapped "apps/pos-desktop/electron/dist" to "electron"
+    // We mapped "database/schema" to "schema"
+    // So relative to "electron/db.js", the schema is at "../schema/schema.sql"
+    schemaPath = path.join(__dirname, '../schema/schema.sql');
   }
 
   try {
     if (fs.existsSync(schemaPath)) {
       const schemaSql = fs.readFileSync(schemaPath, 'utf-8');
-      console.log('Database Schema loaded successfully from:', schemaPath);
-      // TODO: Execute schemaSql using your SQLite driver here (e.g., db.exec(schemaSql))
+      console.log('✅ Database Schema loaded:', schemaPath);
+      // Run your DB exec here
     } else {
-      console.error('Schema file not found at:', schemaPath);
+      console.error('❌ Schema file missing at:', schemaPath);
     }
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    console.error('❌ DB Init failed:', error);
   }
 };
