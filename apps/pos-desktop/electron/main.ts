@@ -3,15 +3,17 @@ import * as path from 'path';
 import { initDb } from './db';
 
 const isDev = !app.isPackaged;
+let mainWindow: BrowserWindow | null = null; // Keep reference to prevent GC
 
 function createWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1024,
     height: 768,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      devTools: isDev, // Only enable devtools in dev by default
     },
   });
 
@@ -19,8 +21,7 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    // In production, we expect the UI to be in ../ui/index.html relative to this file
-    // because of how we configured electron-builder files.
+    // In production, UI is in ../ui/index.html relative to electron/main.js
     mainWindow.loadFile(path.join(__dirname, '../ui/index.html'));
   }
 }

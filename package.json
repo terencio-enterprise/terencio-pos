@@ -4,8 +4,8 @@
   "scripts": {
     "dev": "concurrently -k \"pnpm --filter @terencio/ui dev\" \"pnpm --filter @terencio/electron dev\"",
     "build": "pnpm --filter @terencio/domain build && pnpm --filter @terencio/ui build && pnpm --filter @terencio/electron build",
-    "dist": "pnpm build && electron-builder",
-    "clean": "rimraf node_modules packages/*/node_modules apps/*/node_modules apps/*/*/node_modules dist"
+    "dist": "pnpm clean && pnpm build && electron-builder",
+    "clean": "rimraf node_modules packages/*/node_modules apps/*/node_modules apps/*/*/node_modules dist release"
   },
   "devDependencies": {
     "concurrently": "^8.2.0",

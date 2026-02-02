@@ -13,8 +13,15 @@
       "from": "apps/pos-desktop/ui/dist",
       "to": "ui"
     },
+    {
+      "from": "database/schema",
+      "to": "schema"
+    },
     "package.json"
   ],
+  "extraMetadata": {
+    "main": "electron/main.js"
+  },
   "win": {
     "target": "nsis"
   },
