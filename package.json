@@ -2,7 +2,7 @@
   "name": "terencio-pos-monorepo",
   "private": true,
   "scripts": {
-    "dev": "concurrently -k \"pnpm --filter @terencio/ui dev\" \"pnpm --filter @terencio/electron dev\"",
+    "dev": "pnpm --filter @terencio/domain build && concurrently -k \"pnpm --filter @terencio/ui dev\" \"pnpm --filter @terencio/electron dev\"",
     "build": "pnpm --filter @terencio/domain build && pnpm --filter @terencio/ui build && pnpm --filter @terencio/electron build",
     "dist": "pnpm clean && pnpm build && electron-builder",
     "clean": "rimraf node_modules packages/*/node_modules apps/*/node_modules apps/*/*/node_modules dist release"

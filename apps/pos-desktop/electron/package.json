@@ -6,7 +6,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "start": "electron .",
-    "dev": "tsc && concurrently -k \"npm:watch\" \"wait-on tcp:5173 && npm:start\""
+    "dev": "tsc && concurrently -k \"npm:watch\" \"wait-on http://localhost:5173 && npm:start\""
   },
   "devDependencies": {
     "electron": "^28.0.0",

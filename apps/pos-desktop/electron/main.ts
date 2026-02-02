@@ -3,9 +3,10 @@ import * as path from 'path';
 import { initDb } from './db';
 
 const isDev = !app.isPackaged;
-let mainWindow: BrowserWindow | null = null; // Keep reference to prevent GC
+let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
+  console.log('Creating window...');
   mainWindow = new BrowserWindow({
     width: 1024,
     height: 768,
@@ -13,21 +14,27 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      devTools: isDev, // Only enable devtools in dev by default
+      devTools: isDev,
     },
   });
 
   if (isDev) {
+    console.log('Loading development URL...');
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    // In production, UI is in ../ui/index.html relative to electron/main.js
     mainWindow.loadFile(path.join(__dirname, '../ui/index.html'));
   }
 }
 
 app.whenReady().then(() => {
-  initDb();
+  console.log('App Ready');
+  try {
+    initDb();
+  } catch (err) {
+    console.error('DB Init failed:', err);
+  }
+  
   createWindow();
 
   app.on('activate', function () {
