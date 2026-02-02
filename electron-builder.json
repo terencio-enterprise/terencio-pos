@@ -1,0 +1,27 @@
+{
+  "appId": "com.terencio.pos",
+  "productName": "Terencio POS",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    {
+      "from": "apps/pos-desktop/electron/dist",
+      "to": "electron"
+    },
+    {
+      "from": "apps/pos-desktop/ui/dist",
+      "to": "ui"
+    },
+    "package.json"
+  ],
+  "win": {
+    "target": "nsis"
+  },
+  "mac": {
+    "target": "dmg"
+  },
+  "linux": {
+    "target": "AppImage"
+  }
+}
