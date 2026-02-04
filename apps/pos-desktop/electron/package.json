@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "electron .",
-    "dev": "concurrently -k \"tsc -w\" \"wait-on http://127.0.0.1:5173 && electron .\""
+    "dev": "concurrently -k \"tsc -w\" \"wait-on http://127.0.0.1:3000 && electron .\""
   },
   "dependencies": {
     "better-sqlite3": "^9.4.0"
