@@ -15,8 +15,8 @@
       "to": "ui"
     },
     {
-      "from": "database/schema",
-      "to": "schema"
+      "from": "database/migrations",
+      "to": "migrations"
     },
     {
       "from": "apps/pos-desktop/electron/package.json",
