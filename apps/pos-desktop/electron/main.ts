@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
-import { initDb } from './db';
+import { initDb } from './src/db/db';
 
 const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;

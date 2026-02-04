@@ -1,4 +1,38 @@
 // ==========================================
+// Enums & Constants
+// ==========================================
+
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
+  CASHIER = 'CASHIER'
+}
+
+export enum ShiftStatus {
+  OPEN = 'OPEN',
+  CLOSED = 'CLOSED'
+}
+
+export enum SaleDocType {
+  TICKET = 'TICKET',
+  INVOICE = 'INVOICE',
+  REFUND = 'REFUND'
+}
+
+export enum SaleStatus {
+  PARKED = 'PARKED',
+  COMPLETED = 'COMPLETED',
+  VOIDED = 'VOIDED',
+  REFUNDED = 'REFUNDED'
+}
+
+export enum PaymentMethod {
+  CASH = 'CASH',
+  CARD = 'CARD',
+  SPLIT = 'SPLIT'
+}
+
+// ==========================================
 // Database Entities (Row Mappings)
 // ==========================================
 
@@ -13,7 +47,7 @@ export interface User {
   username: string;
   pin_hash: string | null;
   full_name: string | null;
-  role: 'ADMIN' | 'MANAGER' | 'CASHIER';
+  role: UserRole;
   is_active: number; // 0 or 1
   created_at: string;
   updated_at: string;
@@ -30,22 +64,22 @@ export interface Shift {
   expected_cash: number;
   counted_cash: number;
   discrepancy: number;
-  status: 'OPEN' | 'CLOSED';
+  status: ShiftStatus;
   notes: string | null;
-  synced: number;
+  synced: number; // 0 or 1
 }
 
 export interface Tax {
   uuid: string;
   name: string;
   rate: number;
-  is_default: number;
+  is_default: number; // 0 or 1
 }
 
 export interface Tariff {
   uuid: string;
   name: string;
-  is_tax_included: number;
+  is_tax_included: number; // 0 or 1
   priority: number;
 }
 
@@ -61,7 +95,7 @@ export interface Customer {
   email: string | null;
   phone: string | null;
   tariff_uuid: string | null;
-  is_credit_allowed: number;
+  is_credit_allowed: number; // 0 or 1
   tier_level: string | null;
   notes: string | null;
   created_at: string;
@@ -77,12 +111,12 @@ export interface Product {
   description: string | null;
   category: string | null;
   tax_uuid: string;
-  requires_weight: number;
-  is_discountable: number;
-  is_refundable: number;
+  requires_weight: number; // 0 or 1
+  is_discountable: number; // 0 or 1
+  is_refundable: number; // 0 or 1
   age_restriction: number;
   image_path: string | null;
-  stock_control: number;
+  stock_control: number; // 0 or 1
   stock_current: number;
   created_at: string;
   updated_at: string;
@@ -99,7 +133,7 @@ export interface ProductPrice {
 export interface Sale {
   uuid: string;
   doc_number: string;
-  doc_type: 'TICKET' | 'INVOICE' | 'REFUND';
+  doc_type: SaleDocType;
   shift_uuid: string | null;
   customer_uuid: string | null;
   user_uuid: string;
@@ -107,7 +141,7 @@ export interface Sale {
   total_net: number;
   total_taxes: number;
   total_amount: number;
-  status: 'PARKED' | 'COMPLETED' | 'VOIDED' | 'REFUNDED';
+  status: SaleStatus;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -131,7 +165,7 @@ export interface SaleLine {
 export interface Payment {
   uuid: string;
   sale_uuid: string;
-  method: 'CASH' | 'CARD' | 'SPLIT';
+  method: PaymentMethod;
   amount: number;
   created_at: string;
 }

@@ -4,7 +4,7 @@ import {
   User
 } from '@terencio/domain';
 import { RunResult } from 'better-sqlite3';
-import { db } from '../../db';
+import { db } from './db';
 
 // ==========================================
 // Base Generic Repository
