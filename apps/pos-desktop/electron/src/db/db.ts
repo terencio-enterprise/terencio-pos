@@ -17,7 +17,7 @@ export const initDb = () => {
   // In Dev: It's relative to apps/pos-desktop/electron/dist/main.js -> ../../../../database/migrations
   // In Prod: We will copy it to resources/app/migrations, so it's relative to main.js -> ../migrations
   const migrationsPath = isDev
-    ? path.join(__dirname, '../../../../database/migrations')
+    ? path.join(__dirname, '../../../../../../database/migrations')
     : path.join(__dirname, '../migrations');
 
   console.log(`📂 Database path: ${dbPath}`);
