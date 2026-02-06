@@ -1,14 +1,16 @@
-import { User } from '@/types'
+import { User } from '@terencio/domain'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 interface AuthState {
-  user: User | null
+  user: Omit<User, 'pin_hash'> | null
+  users: Omit<User, 'pin_hash'>[]
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
   
-  login: (email: string, password: string) => Promise<void>
+  loadUsers: () => Promise<void>
+  login: (username: string, pin: string) => Promise<void>
   logout: () => void
   clearError: () => void
 }
@@ -17,27 +19,36 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      users: [],
       isAuthenticated: false,
       isLoading: false,
       error: null,
 
-      login: async (email: string, _password: string) => {
+      loadUsers: async () => {
         set({ isLoading: true, error: null })
         
         try {
-          // TODO: Replace with actual Electron IPC call
-          // const user = await db.login(email, password)
-          
-          // Mock authentication for now
-          const mockUser: User = {
-            id: '1',
-            email,
-            name: 'Demo User',
-            role: 'cashier',
-          }
+          const users = await window.electronAPI.auth.listUsers()
+          set({
+            users,
+            isLoading: false,
+          })
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to load users',
+            isLoading: false,
+          })
+        }
+      },
+
+      login: async (username: string, pin: string) => {
+        set({ isLoading: true, error: null })
+        
+        try {
+          const user = await window.electronAPI.auth.login(username, pin)
           
           set({
-            user: mockUser,
+            user,
             isAuthenticated: true,
             isLoading: false,
           })
@@ -46,10 +57,12 @@ export const useAuthStore = create<AuthState>()(
             error: error instanceof Error ? error.message : 'Login failed',
             isLoading: false,
           })
+          throw error
         }
       },
 
       logout: () => {
+        window.electronAPI.auth.logout()
         set({
           user: null,
           isAuthenticated: false,

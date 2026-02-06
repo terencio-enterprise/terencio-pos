@@ -9,12 +9,13 @@
   },
   "dependencies": {
     "better-sqlite3": "^9.4.0",
-    "uuid": "^13.0.0"
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.10.0",
-    "@types/uuid": "^11.0.0",
+    "@types/uuid": "^9.0.0",
     "concurrently": "^8.2.0",
     "electron": "^28.0.0",
     "electron-rebuild": "^3.2.9",

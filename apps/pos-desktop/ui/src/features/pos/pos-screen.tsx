@@ -3,19 +3,48 @@ import { ProductGrid } from '@/components/pos/product-grid'
 import { ShoppingCart } from '@/components/pos/shopping-cart'
 import { TransactionTabs } from '@/components/pos/transaction-tabs'
 import { Button } from '@/components/ui/button'
+import { ShiftDialog } from '@/features/shift/shift-dialog'
+import { useShiftStore } from '@/store/shift-store'
 import { useTransactionStore } from '@/store/transaction-store'
 import { Plus } from 'lucide-react'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
 export const PosScreen: React.FC = () => {
   const { createTransaction, currentTransactionId } = useTransactionStore()
+  const { currentShift, loadCurrentShift } = useShiftStore()
+  const [showShiftDialog, setShowShiftDialog] = useState(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
+    // Load current shift on mount
+    loadCurrentShift()
+  }, [loadCurrentShift])
+
+  useEffect(() => {
+    // Show shift dialog if no active shift
+    if (currentShift === null) {
+      // Still loading
+      return
+    }
+    
+    if (currentShift.status !== 'OPEN') {
+      setShowShiftDialog(true)
+    }
+  }, [currentShift])
+
+  useEffect(() => {
     // Create initial transaction if none exists
     if (!currentTransactionId) {
       createTransaction()
     }
   }, [currentTransactionId, createTransaction])
+
+  const handleShiftDialogClose = () => {
+    // Don't allow closing without starting shift
+    // User must start a shift to proceed
+    if (currentShift?.status === 'OPEN') {
+      setShowShiftDialog(false)
+    }
+  }
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -51,6 +80,12 @@ export const PosScreen: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Shift Dialog - Required before using POS */}
+      <ShiftDialog
+        isOpen={showShiftDialog}
+        onClose={handleShiftDialogClose}
+      />
     </div>
   )
 }

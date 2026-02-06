@@ -1,0 +1,84 @@
+{
+  "app": {
+    "name": "Terencio POS",
+    "business": "Business"
+  },
+  "auth": {
+    "selectUser": "Select User",
+    "enterPin": "Enter PIN for {{name}}",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "back": "Back",
+    "invalidCredentials": "Invalid username or PIN",
+    "failedToLoad": "Failed to load users",
+    "loginFailed": "Login failed"
+  },
+  "shift": {
+    "startShift": "Start Shift",
+    "endShift": "End Shift",
+    "shiftOpen": "SHIFT OPEN",
+    "shiftClosed": "SHIFT CLOSED",
+    "start": {
+      "title": "Start Shift",
+      "description": "Enter the starting cash amount in the register",
+      "startingCash": "Starting Cash Amount",
+      "starting": "Starting...",
+      "cancel": "Cancel"
+    },
+    "end": {
+      "title": "End Shift",
+      "description": "Count the cash and close your shift",
+      "expectedCash": "Expected Cash",
+      "countedCash": "Counted Cash Amount",
+      "discrepancy": "Discrepancy",
+      "notes": "Notes (Optional)",
+      "notesPlaceholder": "Add any notes about the shift...",
+      "ending": "Ending..."
+    },
+    "errors": {
+      "failedToStart": "Failed to start shift",
+      "failedToEnd": "Failed to end shift",
+      "failedToLoad": "Failed to load current shift",
+      "failedToLoadHistory": "Failed to load shift history"
+    }
+  },
+  "pos": {
+    "welcome": "Welcome, {{name}}",
+    "newTransaction": "New",
+    "products": "Products",
+    "cart": "Cart",
+    "total": "Total",
+    "pay": "Pay",
+    "clear": "Clear"
+  },
+  "topbar": {
+    "toggleTheme": "Toggle theme",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "clear": "Clear",
+    "back": "Back"
+  },
+  "roles": {
+    "ADMIN": "Administrator",
+    "MANAGER": "Manager",
+    "CASHIER": "Cashier"
+  },
+  "currency": "€",
+  "time": {
+    "hours": "{{count}}h",
+    "minutes": "{{count}}m"
+  }
+}

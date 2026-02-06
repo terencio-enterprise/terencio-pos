@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import { initDb } from './src/db/db';
+import { initializeIpcHandlers } from './src/ipc-handlers';
 
 const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
@@ -26,8 +27,12 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(() => {
-  initDb();
+app.whenReady().then(async () => {
+  await initDb();
+  
+  // Initialize IPC handlers after DB is ready
+  initializeIpcHandlers();
+  
   createWindow();
 
   app.on('activate', () => {

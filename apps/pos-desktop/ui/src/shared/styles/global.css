@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   :root {
@@ -51,11 +49,9 @@
 
 @layer base {
   * {
-    /* Replaced @apply with native CSS to resolve Tailwind v4 build error */
     border-color: hsl(var(--border));
   }
   body {
-    /* Replaced @apply with native CSS to resolve Tailwind v4 build error */
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
