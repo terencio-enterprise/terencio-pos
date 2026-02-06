@@ -51,9 +51,12 @@
 
 @layer base {
   * {
-    @apply border-border;
+    /* Replaced @apply with native CSS to resolve Tailwind v4 build error */
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    /* Replaced @apply with native CSS to resolve Tailwind v4 build error */
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
