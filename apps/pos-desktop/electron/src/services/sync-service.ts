@@ -14,9 +14,9 @@ export class SyncService {
   }
 
   /**
-   * Register POS with backend using 6-letter code
+   * Preview registration data without saving (for confirmation screen)
    */
-  async registerPOS(code: string): Promise<POSRegistrationResponse> {
+  async previewRegistration(code: string): Promise<POSRegistrationResponse> {
     if (!code || code.length !== 6) {
       throw new Error('Registration code must be exactly 6 characters');
     }
@@ -24,33 +24,42 @@ export class SyncService {
     try {
       // TODO: CHECK API CALL LATER - UNCOMMENT REAL API INTEGRATION WHEN BACKEND IS READY
       /*
-      const response = await this.apiClient.post<POSRegistrationResponse>('/api/v1/pos/register', {
+      const response = await this.apiClient.post<POSRegistrationResponse>('/api/v1/pos/preview', {
         registrationCode: code.toUpperCase(),
       });
       */
 
-      
-  const saltRounds = 10;
-  const defaultPin = '123456';
-  const pinHash = await bcrypt.hash(defaultPin, saltRounds);
+      const saltRounds = 10;
+      const defaultPin = '123456';
+      const pinHash = await bcrypt.hash(defaultPin, saltRounds);
 
       // TODO: REMOVE MOCK DATA ONCE API IS CONNECTED
       // Mock delay to simulate network request
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1200));
 
       const response: POSRegistrationResponse = {
-        posId: 'mock-pos-id-123',
-        posName: 'Terencio POS (Mock)',
-        storeId: 'mock-store-id-456',
-        storeName: 'Mock Store Location',
-        deviceId: 'MOCK-DEVICE-001',
+        posId: `pos-${code.toLowerCase()}`,
+        posName: `Terminal ${code.substring(0, 3)}`,
+        storeId: `store-${code.substring(3)}`,
+        storeName: 'Main Store Location',
+        deviceId: `DEV-${code}`,
         users: [
           {
-            uuid: 'mock-user-1',
+            uuid: `user-${code}`,
             username: 'admin',
-            full_name: 'Admin User',
-            role: 'admin',
-            // bcrypt hash for "123456"
+            full_name: 'Administrator',
+            role: 'ADMIN',
+            pin_hash: pinHash,
+            is_active: 1,
+            deleted_at: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            uuid: `user-${code}-2`,
+            username: 'cashier',
+            full_name: 'Cashier User',
+            role: 'CASHIER',
             pin_hash: pinHash,
             is_active: 1,
             deleted_at: null,
@@ -65,11 +74,23 @@ export class SyncService {
         throw new Error('Invalid response from server');
       }
 
-      // Save users to local database
-      await this.saveUsers(response.users);
-
-      console.log('✅ POS registered successfully (MOCKED):', response.posName);
+      console.log('✅ Preview data fetched:', response.posName);
       return response;
+    } catch (error: any) {
+      console.error('❌ Preview fetch failed:', error);
+      throw new Error(error.message || 'Failed to fetch registration preview');
+    }
+  }
+
+  /**
+   * Register POS and save configuration (call after preview confirmation)
+   */
+  async registerPOS(registrationData: POSRegistrationResponse, code: string): Promise<void> {
+    try {
+      // Save users to local database
+      await this.saveUsers(registrationData.users);
+
+      console.log('✅ POS registered successfully:', registrationData.posName);
     } catch (error: any) {
       console.error('❌ POS registration failed:', error);
       throw new Error(error.message || 'Failed to register POS');

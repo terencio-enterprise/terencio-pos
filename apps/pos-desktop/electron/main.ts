@@ -1,7 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import { initDb } from './src/db/db';
-import { initializeIpcHandlers } from './src/ipc-handlers';
+import { initializeIpcHandlers } from './src/ipc-handlers/index';
 
 const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;

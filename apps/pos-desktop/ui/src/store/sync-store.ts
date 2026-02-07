@@ -1,4 +1,4 @@
-import { POSConfiguration } from '@terencio/domain';
+import { POSConfiguration, POSRegistrationResponse } from '@terencio/domain';
 import { create } from 'zustand';
 
 export type SyncStep = 'welcome' | 'input' | 'syncing' | 'preview' | 'success' | 'error';
@@ -8,6 +8,7 @@ interface SyncState {
   step: SyncStep;
   code: string;
   error: string | null;
+  registrationData: POSRegistrationResponse | null;
   posConfig: POSConfiguration | null;
   isLoading: boolean;
   loadingStatus: string;
@@ -28,6 +29,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   step: 'welcome',
   code: '',
   error: null,
+  registrationData: null,
   posConfig: null,
   isLoading: false,
   loadingStatus: 'loading.validating',
@@ -52,28 +54,13 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     set({ isLoading: true, step: 'syncing', error: null, loadingStatus: 'loading.validating' });
 
     try {
-      // Mock validation delay and config retrieval for preview
-      await new Promise(resolve => setTimeout(resolve, 800));
       set({ loadingStatus: 'loading.fetching' });
       
-      // TODO: Replace with real pre-check API call if available
-      // For now we simulate fetching config to show in preview
-      
-      // Mock data for preview
-      const mockPreviewConfig: POSConfiguration = {
-        pos_id: 'preview-uuid',
-        pos_name: 'POS Terminal 1',
-        store_id: 'store-uuid',
-        store_name: 'Downtown Store',
-        device_id: 'DEV-001',
-        registered_at: new Date().toISOString(),
-        is_active: 1
-      };
-
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Call backend to get registration preview data
+      const registrationData = await window.electronAPI.sync.preview(code);
 
       set({ 
-        posConfig: mockPreviewConfig,
+        registrationData,
         step: 'preview',
         isLoading: false 
       });
@@ -88,14 +75,20 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   },
 
   confirmRegistration: async () => {
-    const { code } = get();
+    const { code, registrationData } = get();
+    
+    if (!registrationData) {
+      set({ error: 'No registration data available', step: 'error' });
+      return;
+    }
+
     set({ isLoading: true, step: 'syncing', error: null, loadingStatus: 'loading.registering' });
 
     try {
-      await window.electronAPI.sync.register(code);
-      set({ loadingStatus: 'loading.finalizing' });
-      const config = await window.electronAPI.sync.getConfig() as POSConfiguration;
+      // Save the configuration with the backend
+      const config = await window.electronAPI.sync.confirm(registrationData, code);
       
+      set({ loadingStatus: 'loading.finalizing' });
       await new Promise(resolve => setTimeout(resolve, 500)); // Smooth transition
 
       set({ 
@@ -106,7 +99,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     } catch (error: any) {
       console.error('Registration failed:', error);
       set({ 
-        error: error.message || 'Failed to register POS. Please check your code and try again.',
+        error: error.message || 'Failed to register POS. Please try again.',
         step: 'error',
         isLoading: false 
       });
@@ -127,6 +120,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     step: 'welcome', 
     code: '', 
     error: null, 
+    registrationData: null,
     posConfig: null, 
     isLoading: false 
   }),

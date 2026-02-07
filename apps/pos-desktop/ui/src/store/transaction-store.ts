@@ -1,4 +1,4 @@
-import { generateId } from '@/lib/utils'
+import { generateId } from '@/shared/lib/utils'
 import { CartItem, Product, Transaction } from '@/types'
 import { create } from 'zustand'
 

@@ -1,9 +1,11 @@
+import { POSRegistrationResponse } from '@terencio/domain';
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   sync: {
     checkStatus: () => ipcRenderer.invoke('sync:checkStatus'),
-    register: (code: string) => ipcRenderer.invoke('sync:register', code),
+    preview: (code: string) => ipcRenderer.invoke('sync:preview', code),
+    confirm: (registrationData: POSRegistrationResponse, code: string) => ipcRenderer.invoke('sync:confirm', registrationData, code),
     getConfig: () => ipcRenderer.invoke('sync:getConfig')
   },
   auth: {

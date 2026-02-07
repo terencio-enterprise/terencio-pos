@@ -20,10 +20,9 @@ export const LoginPage: React.FC = () => {
     handlePinInput,
     handleKeyDown,
     clearError,
-    getDotState, // Using the helper from hook
+    getDotState,
   } = useLogin()
 
-  // Map state to exact Tailwind classes
   const getDotClasses = (state: DotState) => {
     switch (state) {
       case 'error':
@@ -104,7 +103,6 @@ export const LoginPage: React.FC = () => {
               `}
               onClick={() => pinContainerRef.current?.focus()}
             >
-              {/* Dots Rendering - Simplified using hook helper */}
               <div className="flex justify-center gap-4">
                 {[...Array(6)].map((_, i) => {
                   const state = getDotState(i)
@@ -116,7 +114,6 @@ export const LoginPage: React.FC = () => {
                 })}
               </div>
               
-              {/* Spacer to maintain layout without text error */}
               <div className="mt-4 min-h-[20px]" />
             </div>
 

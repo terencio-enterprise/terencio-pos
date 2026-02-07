@@ -15,7 +15,8 @@ import {
     Loader2,
     MapPin,
     Monitor,
-    Store
+    Store,
+    User
 } from 'lucide-react'
 import React, { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -26,6 +27,7 @@ export const SyncWizardPage: React.FC = () => {
     step, 
     code, 
     error, 
+    registrationData,
     posConfig, 
     isLoading, 
     loadingStatus, 
@@ -46,7 +48,6 @@ export const SyncWizardPage: React.FC = () => {
     }
   }, [step])
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -77,7 +78,6 @@ export const SyncWizardPage: React.FC = () => {
     setLanguage(language === 'en' ? 'es' : 'en')
   }
 
-  // Simplified Step Indicator
   const renderStepIndicator = () => {
     if (step === 'welcome' || step === 'success') return null
 
@@ -102,10 +102,8 @@ export const SyncWizardPage: React.FC = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-4 relative overflow-hidden font-sans">
-      {/* Background Ambience matched to LoginPage */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[var(--primary)]/10 via-[var(--background)] to-[var(--background)] pointer-events-none" />
       
-      {/* Language Switcher */}
       <div className="absolute top-6 right-6 z-50">
         <Button 
           variant="ghost" 
@@ -119,8 +117,6 @@ export const SyncWizardPage: React.FC = () => {
       </div>
 
       <div className="w-full max-w-[480px] relative z-10 flex flex-col gap-6 transition-all duration-500 ease-in-out">
-        
-        {/* Header - Always visible but adapts */}
         <div className={`text-center transition-all duration-500 ${step === 'welcome' ? 'mb-4' : 'mb-0'}`}>
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[var(--primary)]/10 mb-4 border border-[var(--primary)]/20 shadow-sm">
             <Store className="h-7 w-7 text-[var(--primary)]" />
@@ -133,10 +129,7 @@ export const SyncWizardPage: React.FC = () => {
 
         {renderStepIndicator()}
 
-        {/* Main Content Area - Clean, no card borders */}
         <div className="relative min-h-[300px]">
-          
-          {/* STEP 1: WELCOME */}
           {step === 'welcome' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8 text-center">
               <div className="space-y-4">
@@ -159,7 +152,6 @@ export const SyncWizardPage: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 2: CODE INPUT */}
           {step === 'input' && (
             <div className="animate-in fade-in slide-in-from-right-8 duration-300 space-y-8">
               <div className="text-center space-y-2">
@@ -210,7 +202,6 @@ export const SyncWizardPage: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 3: LOADING */}
           {step === 'syncing' && (
             <div className="animate-in fade-in zoom-in-95 duration-300 flex flex-col items-center justify-center py-12 space-y-6">
               <div className="relative">
@@ -226,8 +217,7 @@ export const SyncWizardPage: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 4: PREVIEW */}
-          {step === 'preview' && posConfig && (
+          {step === 'preview' && registrationData && (
             <div className="animate-in fade-in slide-in-from-right-8 duration-300 space-y-6">
               <div className="text-center space-y-2">
                 <h2 className="text-xl font-semibold">{t('preview.title')}</h2>
@@ -235,34 +225,48 @@ export const SyncWizardPage: React.FC = () => {
               </div>
 
               <div className="rounded-2xl border border-border/50 bg-secondary/20 p-6 space-y-6">
-                {/* Store Details */}
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-full bg-background border border-border/50 flex items-center justify-center shrink-0 shadow-sm">
                     <Building2 className="h-6 w-6 text-primary" />
                   </div>
                   <div className="space-y-1 flex-1">
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('preview.store')}</p>
-                    <p className="font-bold text-xl text-foreground">{posConfig.store_name}</p>
+                    <p className="font-bold text-xl text-foreground">{registrationData.storeName}</p>
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <MapPin className="h-3.5 w-3.5" />
-                      Downtown Branch
+                      Store ID: {registrationData.storeId}
                     </div>
                   </div>
                 </div>
 
                 <Separator className="bg-border/60" />
 
-                {/* POS Details */}
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-full bg-background border border-border/50 flex items-center justify-center shrink-0 shadow-sm">
                     <Monitor className="h-6 w-6 text-primary" />
                   </div>
                   <div className="space-y-1 flex-1">
                     <p className="text-xs font-bold text-[var(--muted-foreground)] uppercase tracking-wider">{t('preview.posName')}</p>
-                    <p className="font-bold text-xl text-[var(--foreground)]">{posConfig.pos_name}</p>
-                    <Badge variant="outline" className="mt-1 font-mono text-xs bg-[var(--background)]/50">{posConfig.device_id}</Badge>
+                    <p className="font-bold text-xl text-[var(--foreground)]">{registrationData.posName}</p>
+                    <Badge variant="outline" className="mt-1 font-mono text-xs bg-[var(--background)]/50">{registrationData.deviceId}</Badge>
                   </div>
                 </div>
+
+                {registrationData.users && registrationData.users.length > 0 && (
+                  <>
+                    <Separator className="bg-border/60" />
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-background border border-border/50 flex items-center justify-center shrink-0 shadow-sm">
+                        <User className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="space-y-1 flex-1">
+                        <p className="text-xs font-bold text-[var(--muted-foreground)] uppercase tracking-wider">Users</p>
+                        <p className="font-semibold text-lg text-[var(--foreground)]">{registrationData.users.length} user(s) configured</p>
+                        <p className="text-xs text-muted-foreground">{registrationData.users.map(u => u.username).join(', ')}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-4 pt-2">
@@ -285,7 +289,6 @@ export const SyncWizardPage: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 5: SUCCESS */}
           {step === 'success' && posConfig && (
             <div className="animate-in fade-in zoom-in-95 duration-500 py-6 text-center space-y-8">
               <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto ring-4 ring-green-500/5">
@@ -319,7 +322,6 @@ export const SyncWizardPage: React.FC = () => {
             </div>
           )}
 
-          {/* ERROR STATE */}
           {step === 'error' && (
             <div className="animate-in shake duration-300 text-center py-8 space-y-6">
               <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
@@ -343,7 +345,6 @@ export const SyncWizardPage: React.FC = () => {
           )}
         </div>
 
-        {/* Footer info */}
         <div className="text-center mt-auto pt-8 pb-4 text-xs text-muted-foreground/40 font-medium">
           v1.0.0 • {language === 'en' ? 'Secure Desktop Environment' : 'Entorno de Escritorio Seguro'}
         </div>

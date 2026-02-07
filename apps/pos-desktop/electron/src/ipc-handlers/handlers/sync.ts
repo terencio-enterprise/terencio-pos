@@ -1,4 +1,4 @@
-import { POSConfiguration } from '@terencio/domain';
+import { POSConfiguration, POSRegistrationResponse } from '@terencio/domain';
 import { ipcMain } from 'electron';
 import { IpcContext } from '../context';
 
@@ -13,29 +13,43 @@ export function registerSyncHandlers(context: IpcContext) {
     }
   });
 
-  ipcMain.handle('sync:register', async (_event, code: string) => {
+  // Preview registration data without saving
+  ipcMain.handle('sync:preview', async (_event, code: string) => {
     try {
-      const response = await context.syncService.registerPOS(code);
+      const response = await context.syncService.previewRegistration(code);
+      console.log('✅ Preview data fetched for code:', code);
+      return response;
+    } catch (error: any) {
+      console.error('Error previewing registration:', error);
+      throw error;
+    }
+  });
 
+  // Confirm and save registration
+  ipcMain.handle('sync:confirm', async (_event, registrationData: POSRegistrationResponse, code: string) => {
+    try {
+      // Save users from the registration data
+      await context.syncService.registerPOS(registrationData, code);
+
+      // Save POS configuration
       const posConfig: POSConfiguration = {
-        pos_id: response.posId,
-        pos_name: response.posName,
-        store_id: response.storeId,
-        store_name: response.storeName,
-        device_id: response.deviceId,
+        pos_id: registrationData.posId,
+        pos_name: registrationData.posName,
+        store_id: registrationData.storeId,
+        store_name: registrationData.storeName,
+        device_id: registrationData.deviceId,
         registration_code: code,
         registered_at: new Date().toISOString(),
         is_active: 1,
       };
 
       await context.posConfigRepo.saveConfiguration(posConfig);
+      context.setCurrentDeviceId(registrationData.deviceId);
 
-      context.setCurrentDeviceId(response.deviceId);
-
-      console.log('✅ POS registered and configured successfully');
-      return response;
+      console.log('✅ POS configuration saved and confirmed');
+      return posConfig;
     } catch (error: any) {
-      console.error('Error during POS registration:', error);
+      console.error('Error confirming registration:', error);
       throw error;
     }
   });

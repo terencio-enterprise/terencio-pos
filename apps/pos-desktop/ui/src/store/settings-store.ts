@@ -1,4 +1,4 @@
-import { Theme, applyTheme, defaultTheme } from '@/lib/theme'
+import { Theme, applyTheme, defaultTheme } from '@/shared/lib/theme'
 import { Settings } from '@/types'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'

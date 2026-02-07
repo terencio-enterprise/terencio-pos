@@ -3,7 +3,8 @@ import { POSConfiguration, POSRegistrationResponse, Shift, User } from '@terenci
 export interface ElectronAPI {
   sync: {
     checkStatus: () => Promise<boolean>;
-    register: (code: string) => Promise<POSRegistrationResponse>;
+    preview: (code: string) => Promise<POSRegistrationResponse>;
+    confirm: (registrationData: POSRegistrationResponse, code: string) => Promise<POSConfiguration>;
     getConfig: () => Promise<POSConfiguration | null>;
   };
   auth: {
