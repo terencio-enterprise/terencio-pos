@@ -13,14 +13,14 @@ export class SqliteUserRepository extends SqliteBaseRepository<User> implements 
   }
 
   async findAllActive(): Promise<User[]> {
-    const stmt = this.getDb().prepare('SELECT * FROM users WHERE is_active = 1 AND deleted_at IS NULL');
+    const stmt = this.getDb().prepare('SELECT * FROM users WHERE is_active = 1');
     return stmt.all() as User[];
   }
 
   async authenticateWithPin(username: string, pin: string): Promise<User | null> {
     const user = await this.findByUsername(username);
     
-    if (!user || !user.is_active || user.deleted_at) {
+    if (!user || !user.is_active) {
       return null;
     }
 

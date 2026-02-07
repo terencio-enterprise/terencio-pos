@@ -1,16 +1,14 @@
 import {
-    FiscalRecord,
-    IFiscalRecordRepository,
+    FiscalChainRecord,
+    IFiscalChainRepository,
     IPaymentRepository,
     ISaleLineRepository,
     ISaleRepository,
-    ISaleTaxSummaryRepository,
     Payment,
     Sale,
-    SaleLine,
-    SaleTaxSummary
+    SaleBillingInfo,
+    SaleLine
 } from '@terencio/domain';
-import { db } from '../db/db';
 import { SqliteBaseRepository } from './base.repository';
 
 export class SqliteSaleRepository extends SqliteBaseRepository<Sale> implements ISaleRepository {
@@ -18,109 +16,99 @@ export class SqliteSaleRepository extends SqliteBaseRepository<Sale> implements 
   protected primaryKey = 'uuid';
 
   async findByDateRange(startDate: string, endDate: string): Promise<Sale[]> {
-    const stmt = this.getDb().prepare('SELECT * FROM sales WHERE issue_date BETWEEN ? AND ? ORDER BY issue_date DESC');
+    const stmt = this.getDb().prepare('SELECT * FROM sales WHERE issued_at BETWEEN ? AND ? ORDER BY issued_at DESC');
     return stmt.all(startDate, endDate) as Sale[];
   }
 
-  async findByShiftId(shiftId: string): Promise<Sale[]> {
-    const stmt = this.getDb().prepare('SELECT * FROM sales WHERE shift_uuid = ? ORDER BY issue_date DESC');
-    return stmt.all(shiftId) as Sale[];
+  async findByShiftId(shiftUuid: string): Promise<Sale[]> {
+    const stmt = this.getDb().prepare('SELECT * FROM sales WHERE shift_uuid = ? ORDER BY issued_at DESC');
+    return stmt.all(shiftUuid) as Sale[];
   }
 
-  async findFullSale(saleId: string): Promise<{ 
+  async findFullSale(saleUuid: string): Promise<{ 
     sale: Sale; 
     lines: SaleLine[]; 
     payments: Payment[]; 
-    taxes: SaleTaxSummary[] 
+    billingInfo: SaleBillingInfo | null 
   } | null> {
-    // Transactional read for consistency
     const run = this.getDb().transaction(() => {
         const saleStmt = this.getDb().prepare('SELECT * FROM sales WHERE uuid = ?');
-        const sale = saleStmt.get(saleId) as Sale;
+        const sale = saleStmt.get(saleUuid) as Sale;
         
         if (!sale) return null;
 
         const linesStmt = this.getDb().prepare('SELECT * FROM sale_lines WHERE sale_uuid = ?');
-        const lines = linesStmt.all(saleId) as SaleLine[];
+        const lines = linesStmt.all(saleUuid) as SaleLine[];
 
         const payStmt = this.getDb().prepare('SELECT * FROM payments WHERE sale_uuid = ?');
-        const payments = payStmt.all(saleId) as Payment[];
+        const payments = payStmt.all(saleUuid) as Payment[];
 
-        const taxStmt = this.getDb().prepare('SELECT * FROM sale_tax_summary WHERE sale_uuid = ?');
-        const taxes = taxStmt.all(saleId) as SaleTaxSummary[];
+        const billStmt = this.getDb().prepare('SELECT * FROM sale_billing_info WHERE sale_uuid = ?');
+        const billingInfo = (billStmt.get(saleUuid) as SaleBillingInfo) || null;
 
-        return { sale, lines, payments, taxes };
+        return { sale, lines, payments, billingInfo };
     });
 
     return run();
+  }
+
+  async finalizeSale(saleUuid: string): Promise<void> {
+    // TODO: Implement VeriFactu Chaining Logic here
+    const stmt = this.getDb().prepare('UPDATE sales SET is_fiscal_issued = 1, issued_at = CURRENT_TIMESTAMP WHERE uuid = ?');
+    stmt.run(saleUuid);
   }
 }
 
 export class SqliteSaleLineRepository extends SqliteBaseRepository<SaleLine> implements ISaleLineRepository {
   protected tableName = 'sale_lines';
-  protected primaryKey = 'uuid';
+  protected primaryKey = 'id';
 
-  async findBySaleId(saleId: string): Promise<SaleLine[]> {
+  async findBySaleId(saleUuid: string): Promise<SaleLine[]> {
     const stmt = this.getDb().prepare('SELECT * FROM sale_lines WHERE sale_uuid = ?');
-    return stmt.all(saleId) as SaleLine[];
+    return stmt.all(saleUuid) as SaleLine[];
   }
 
-  async deleteBySaleId(saleId: string): Promise<void> {
+  async deleteBySaleId(saleUuid: string): Promise<void> {
     const stmt = this.getDb().prepare('DELETE FROM sale_lines WHERE sale_uuid = ?');
-    stmt.run(saleId);
+    stmt.run(saleUuid);
+  }
+
+  async voidLine(lineId: number, managerId: number, reason: string): Promise<void> {
+     // Transaction to update line and log override
+     const run = this.getDb().transaction(() => {
+        this.getDb().prepare("UPDATE sale_lines SET status = 'VOIDED' WHERE id = ?").run(lineId);
+        this.getDb().prepare("INSERT INTO manager_overrides (line_id, manager_user_id, reason) VALUES (?, ?, ?)").run(lineId, managerId, reason);
+     });
+     run();
   }
 }
 
 export class SqlitePaymentRepository extends SqliteBaseRepository<Payment> implements IPaymentRepository {
   protected tableName = 'payments';
-  protected primaryKey = 'uuid';
+  protected primaryKey = 'id';
 
-  async findBySaleId(saleId: string): Promise<Payment[]> {
+  async findBySaleId(saleUuid: string): Promise<Payment[]> {
     const stmt = this.getDb().prepare('SELECT * FROM payments WHERE sale_uuid = ?');
-    return stmt.all(saleId) as Payment[];
+    return stmt.all(saleUuid) as Payment[];
   }
 }
 
-export class SqliteSaleTaxSummaryRepository implements ISaleTaxSummaryRepository {
-  private getDb() {
-    if (!db) throw new Error('Database not initialized');
-    return db;
-  }
+export class SqliteFiscalChainRepository extends SqliteBaseRepository<FiscalChainRecord> implements IFiscalChainRepository {
+  protected tableName = 'fiscal_chain';
+  protected primaryKey = 'id';
 
-  async findBySaleId(saleId: string): Promise<SaleTaxSummary[]> {
-    const stmt = this.getDb().prepare('SELECT * FROM sale_tax_summary WHERE sale_uuid = ?');
-    return stmt.all(saleId) as SaleTaxSummary[];
-  }
-
-  async replaceForSale(saleId: string, summaries: SaleTaxSummary[]): Promise<void> {
-    const deleteStmt = this.getDb().prepare('DELETE FROM sale_tax_summary WHERE sale_uuid = ?');
-    const insertStmt = this.getDb().prepare(`
-      INSERT INTO sale_tax_summary (sale_uuid, tax_id, tax_name_snapshot, tax_rate_snapshot, base_amount, tax_amount)
-      VALUES (@sale_uuid, @tax_id, @tax_name_snapshot, @tax_rate_snapshot, @base_amount, @tax_amount)
-    `);
-
-    const run = this.getDb().transaction(() => {
-       deleteStmt.run(saleId);
-       for (const s of summaries) {
-         insertStmt.run(s);
-       }
-    });
-
-    run();
-  }
-}
-
-export class SqliteFiscalRecordRepository extends SqliteBaseRepository<FiscalRecord> implements IFiscalRecordRepository {
-  protected tableName = 'fiscal_records';
-  protected primaryKey = 'uuid';
-
-  async findBySaleId(saleId: string): Promise<FiscalRecord[]> {
-    const stmt = this.getDb().prepare('SELECT * FROM fiscal_records WHERE sale_uuid = ? ORDER BY fiscal_sequence ASC');
-    return stmt.all(saleId) as FiscalRecord[];
+  async findBySaleUuid(saleUuid: string): Promise<FiscalChainRecord | null> {
+    const stmt = this.getDb().prepare('SELECT * FROM fiscal_chain WHERE sale_uuid = ?');
+    return (stmt.get(saleUuid) as FiscalChainRecord) || null;
   }
   
-  async getLastRecord(): Promise<FiscalRecord | null> {
-    const stmt = this.getDb().prepare('SELECT * FROM fiscal_records ORDER BY fiscal_sequence DESC LIMIT 1');
-    return (stmt.get() as FiscalRecord) || null;
+  async getChainHead(deviceSerial: string): Promise<FiscalChainRecord | null> {
+    const stmt = this.getDb().prepare('SELECT * FROM fiscal_chain WHERE device_serial = ? ORDER BY chain_sequence_id DESC LIMIT 1');
+    return (stmt.get(deviceSerial) as FiscalChainRecord) || null;
+  }
+
+  async validateChainIntegrity(deviceSerial: string): Promise<boolean> {
+      // Stub for now
+      return true;
   }
 }

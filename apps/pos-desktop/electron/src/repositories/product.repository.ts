@@ -12,7 +12,11 @@ export class SqliteProductRepository extends SqliteBaseRepository<Product> imple
   protected primaryKey = 'id';
 
   async findByBarcode(barcode: string): Promise<Product | null> {
-    const stmt = this.getDb().prepare('SELECT * FROM products WHERE barcode = ?');
+    const stmt = this.getDb().prepare(`
+      SELECT p.* FROM products p
+      JOIN product_barcodes b ON p.id = b.product_id
+      WHERE b.barcode = ?
+    `);
     return (stmt.get(barcode) as Product) || null;
   }
 
@@ -25,20 +29,20 @@ export class SqliteProductRepository extends SqliteBaseRepository<Product> imple
     const likeQuery = `%${query}%`;
     const stmt = this.getDb().prepare(`
       SELECT * FROM products 
-      WHERE (name LIKE ? OR barcode LIKE ? OR reference LIKE ?)
-      AND deleted_at IS NULL
+      WHERE (name LIKE ? OR reference LIKE ?)
+      AND active = 1
     `);
-    return stmt.all(likeQuery, likeQuery, likeQuery) as Product[];
+    return stmt.all(likeQuery, likeQuery) as Product[];
   }
 
   async findAllActive(): Promise<Product[]> {
-    const stmt = this.getDb().prepare('SELECT * FROM products WHERE active = 1 AND deleted_at IS NULL');
+    const stmt = this.getDb().prepare('SELECT * FROM products WHERE active = 1');
     return stmt.all() as Product[];
   }
 
-  async delete(id: string | number): Promise<void> {
-    const stmt = this.getDb().prepare('UPDATE products SET deleted_at = CURRENT_TIMESTAMP, active = 0 WHERE id = ?');
-    stmt.run(id);
+  async updateStock(productId: number, quantityChange: number): Promise<void> {
+    const stmt = this.getDb().prepare('UPDATE products SET stock_current = stock_current + ? WHERE id = ?');
+    stmt.run(quantityChange, productId);
   }
 }
 
@@ -65,11 +69,10 @@ export class SqliteProductPriceRepository implements IProductPriceRepository {
 
   async setPrice(price: ProductPrice): Promise<void> {
     const stmt = this.getDb().prepare(`
-      INSERT INTO product_prices (product_id, tariff_id, price, updated_at) 
+      INSERT INTO product_prices (product_id, tariff_id, price, created_at) 
       VALUES (@product_id, @tariff_id, @price, CURRENT_TIMESTAMP)
       ON CONFLICT(product_id, tariff_id) DO UPDATE SET
-      price = excluded.price,
-      updated_at = CURRENT_TIMESTAMP
+      price = excluded.price
     `);
     stmt.run(price);
   }
