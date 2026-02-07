@@ -110,7 +110,7 @@ export const LoginPage: React.FC = () => {
                   const state = getDotState(i)
                   return (
                     <div key={i} className="relative flex items-center justify-center w-5 h-5 ">
-                      <div className={`rounded-full transition-all duration-300 ${getDotClasses(state)}`} />
+                      <div className={`rounded-full transition-all duration-300 ${getDotClasses("filled")}`} />
                     </div>
                   )
                 })}
