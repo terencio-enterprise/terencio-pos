@@ -253,7 +253,7 @@ CREATE TABLE IF NOT EXISTS cash_drawer_events (
 
 -- 1. DOCUMENT SEQUENCES (VeriFactu Gap-Free Requirement)
 CREATE TABLE IF NOT EXISTS doc_sequences (
-    series TEXT NOT NULL,             -- e.g., BCN01-P01-T24-0001 so shop-pos-(type/year)-numbering
+    series TEXT NOT NULL,             -- e.g., BCN01-P01-T24-0001 so [STORE][POS][TYPE][YY]
     current_value INTEGER DEFAULT 0,
     year INTEGER NOT NULL,
     PRIMARY KEY (series, year)

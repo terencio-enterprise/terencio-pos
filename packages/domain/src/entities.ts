@@ -16,6 +16,79 @@ export interface PosConfig {
   updated_at: ISODateString;
 }
 
+// Runtime POS configuration (used during registration and runtime)
+export interface POSConfiguration {
+  pos_id: string;
+  pos_name: string;
+  store_id: string;
+  store_name: string;
+  device_id: string;
+  registration_code?: string | null;
+  registered_at: string;
+  is_active: BooleanInt;
+}
+
+// ==================================================================================
+// REGISTRATION DTOs (matching backend API structure)
+// ==================================================================================
+
+/**
+ * Request DTO for POS registration preview.
+ * Validates registration code and returns store/user context.
+ */
+export interface PosRegistrationPreviewRequest {
+  code: string;
+  deviceId: string;
+}
+
+/**
+ * Response DTO for POS registration preview.
+ * Contains store and user information for initial sync.
+ */
+export interface PosRegistrationPreviewDto {
+  posId: string;         // Generated/Pre-assigned logical ID
+  posName: string;       // "Caja Principal 01"
+  storeId: string;       // UUID
+  storeName: string;
+  users: UserDto[];      // Initial sync of users
+}
+
+/**
+ * Request DTO for POS registration confirmation.
+ * Creates device and completes registration.
+ */
+export interface PosRegistrationConfirmRequest {
+  code: string;
+  hardwareId: string;
+}
+
+/**
+ * Response DTO for POS registration confirmation.
+ * Contains device and license information.
+ */
+export interface PosRegistrationResultDto {
+  storeId: string;
+  storeName: string;
+  deviceId: string;
+  serialCode: string;
+  licenseKey: string;
+}
+
+/**
+ * User DTO for registration responses.
+ */
+export interface UserDto {
+  id: number;
+  uuid: string;
+  username: string;
+  fullName: string | null;
+  role: UserRole;
+  pinHash: string;
+  isActive: BooleanInt;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppSetting {
   key: string;
   value: string | null;
@@ -58,6 +131,7 @@ export interface Tax {
 export interface Product {
   id: number;
   uuid: string;
+  reference: string | null;
   
   // Display
   name: string;
@@ -81,6 +155,8 @@ export interface Product {
   stock_tracking: BooleanInt;
   stock_current: number;
   min_stock_alert: number;
+  last_stock_sync: ISODateString | null;
+  reserved_stock: number;
   
   // Meta
   image_url: string | null;
@@ -144,16 +220,21 @@ export interface Customer {
   tariff_id: number | null;
   allow_credit: BooleanInt;
   credit_limit: number;
+  surcharge_apply: BooleanInt;
   
   verifactu_ref: string | null;
   active: BooleanInt;
+  
+  sync_status: 'PENDING' | 'SYNCED' | 'ERROR';
+  last_updated_server: ISODateString | null;
+  
   updated_at: ISODateString;
 }
 
 // ==================================================================================
 // 5. OPERATIONS: SHIFTS & CASH
 // ==================================================================================
-export type ShiftStatus = 'OPEN' | 'CLOSED' | 'Z_REPORT_PRINTED';
+export type ShiftStatus = 'OPEN' | 'CLOSED';
 
 export interface Shift {
   id: number;
@@ -170,7 +251,18 @@ export interface Shift {
   amount_diff: number;    // Discrepancy
   
   status: ShiftStatus;
+  
+  // Enterprise: Z Report
   z_report_number: number | null;
+  z_series: string | null;
+  z_year: number | null;
+  z_report_hash: string | null;
+  z_report_signature: string | null;
+  
+  // Audit
+  reopened: BooleanInt;
+  reopened_by_user_id: number | null;
+  reopened_reason: string | null;
 }
 
 export type CashMovementType = 'IN' | 'OUT';
@@ -185,6 +277,16 @@ export interface CashMovement {
   created_at: ISODateString;
 }
 
+export type CashDrawerEventType = 'SALE_OPEN' | 'MANUAL_OPEN' | 'CHANGE';
+
+export interface CashDrawerEvent {
+  id: number;
+  shift_uuid: string | null;
+  user_id: number;
+  event_type: CashDrawerEventType;
+  timestamp: ISODateString;
+}
+
 // ==================================================================================
 // 6. SALES & TRANSACTIONS
 // ==================================================================================
@@ -194,16 +296,22 @@ export interface DocSequence {
   current_value: number;
 }
 
-export type SaleStatus = 'DRAFT' | 'COMPLETED' | 'VOIDED' | 'REFUNDED';
+export type SaleStatus = 'DRAFT' | 'COMPLETED' | 'RECTIFIED';
+export type SaleType = 'SIMPLIFIED' | 'FULL';
 
 export interface Sale {
   id: number;
   uuid: string;
+  global_uuid: string | null;
   
   // Document ID
   series: string;
   number: number;
-  full_reference: string; // e.g., "F24-0001"
+  full_reference: string; // e.g., "T24-0001"
+  
+  // Legal Type
+  type: SaleType;
+  billing_upgraded_from_simplified: BooleanInt;
   
   // Timing
   created_at: ISODateString; // Basket start
@@ -218,22 +326,49 @@ export interface Sale {
   status: SaleStatus;
   is_fiscal_issued: BooleanInt;
   
-  // Rectification
+  // Rectification / Void Logic
   rectifies_uuid: string | null;
   rectification_reason: string | null;
+  void_reason_code: string | null;
+  void_reason_text: string | null;
+  
+  // Audit
+  print_count: number;
+  last_printed_at: ISODateString | null;
   
   // Financials
   total_net: number;
   total_tax: number;
+  total_surcharge: number;
   total_amount: number;
   
   // Verification
   qr_data: string | null; // VeriFactu QR Content
+  
+  // Sync
+  sync_status: 'PENDING' | 'SYNCED' | 'ERROR';
+  server_id: number | null;
 }
+
+export interface SaleBillingInfo {
+  sale_uuid: string; // PK/FK
+  customer_legal_name: string;
+  customer_nif: string;
+  customer_address: string | null;
+  customer_city: string | null;
+  customer_zip: string | null;
+  customer_country: string;
+}
+
+export type SaleLineStatus = 'ACTIVE' | 'VOIDED' | 'RETURNED';
 
 export interface SaleLine {
   id: number;
   sale_uuid: string;
+  
+  status: SaleLineStatus;
+  returned_from_sale_uuid: string | null;
+  returned_from_line_id: number | null;
   
   product_id: number | null;
   barcode_used: string | null;
@@ -246,12 +381,36 @@ export interface SaleLine {
   discount_percent: number;
   discount_amount: number;
   promotion_applied_id: number | null;
+  promotion_name_snapshot: string | null;
+  promotion_type_snapshot: string | null;
+  promotion_discount_snapshot: number | null;
   
   // Taxes
   tax_id: number;
   tax_rate_snapshot: number;
+  tax_amount: number;
+  
+  // Surcharge
+  surcharge_rate: number;
+  surcharge_amount: number;
+  
+  // Weight & Scale
+  weight_read: number | null;
+  scale_id: string | null;
+  plu_prefix: string | null;
+  embedded_weight: number | null;
+  embedded_price: number | null;
   
   total_line: number;
+}
+
+export interface ManagerOverride {
+  id: number;
+  sale_uuid: string | null;
+  line_id: number | null;
+  manager_user_id: number;
+  reason: string | null;
+  timestamp: ISODateString;
 }
 
 export type PaymentMethod = 'CASH' | 'CARD' | 'VOUCHER' | 'CREDIT';
@@ -268,7 +427,7 @@ export interface Payment {
 // ==================================================================================
 // 7. VERIFACTU CORE (FISCAL LEDGER)
 // ==================================================================================
-export type FiscalEventType = 'ALTA' | 'ANULACION';
+export type FiscalEventType = 'ALTA' | 'ANULACION' | 'RECTIFICACION';
 
 export interface FiscalChainRecord {
   id: number;
@@ -280,6 +439,13 @@ export interface FiscalChainRecord {
   // Chain Security
   previous_record_hash: string;
   chain_sequence_id: number;
+  fiscal_timestamp: ISODateString;
+  
+  // Enterprise Audit
+  software_name: string;
+  software_version: string;
+  installation_id: string;
+  device_serial: string;
   
   // Data Snapshot
   issuer_nif: string;

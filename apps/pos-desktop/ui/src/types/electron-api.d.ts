@@ -1,10 +1,17 @@
-import { POSConfiguration, POSRegistrationResponse, Shift, User } from '@terencio/domain';
+import {
+    POSConfiguration,
+    PosConfig,
+    PosRegistrationPreviewDto,
+    PosRegistrationResultDto,
+    Shift,
+    User
+} from '@terencio/domain';
 
 export interface ElectronAPI {
   sync: {
     checkStatus: () => Promise<boolean>;
-    preview: (code: string) => Promise<POSRegistrationResponse>;
-    confirm: (registrationData: POSRegistrationResponse, code: string) => Promise<POSConfiguration>;
+    preview: (code: string) => Promise<PosRegistrationPreviewDto>;
+    confirm: (registrationData: PosRegistrationPreviewDto, code: string) => Promise<POSConfiguration>;
     getConfig: () => Promise<POSConfiguration | null>;
   };
   auth: {
@@ -18,6 +25,12 @@ export interface ElectronAPI {
     end: (countedCash: number, notes?: string) => Promise<Shift>;
     getCurrent: () => Promise<Shift | null>;
     getHistory: () => Promise<Shift[]>;
+  };
+  registration: {
+    preview: (code: string, deviceId: string) => Promise<PosRegistrationPreviewDto>;
+    confirm: (code: string, hardwareId: string) => Promise<PosRegistrationResultDto>;
+    checkStatus: () => Promise<boolean>;
+    getConfig: () => Promise<PosConfig | null>;
   };
 }
 

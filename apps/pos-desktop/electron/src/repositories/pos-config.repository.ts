@@ -1,4 +1,4 @@
-import { POSConfiguration } from '@terencio/domain';
+import { PosConfig } from '@terencio/domain';
 import { db } from '../db/db';
 
 /**
@@ -8,14 +8,14 @@ export class SqlitePOSConfigRepository {
   /**
    * Get the current POS configuration
    */
-  async getConfiguration(): Promise<POSConfiguration | null> {
+  async getConfiguration(): Promise<PosConfig | null> {
     if (!db) {
       throw new Error('Database not initialized');
     }
 
     try {
-      const stmt = db.prepare('SELECT * FROM pos_configuration WHERE id = 1');
-      const result = stmt.get() as POSConfiguration | undefined;
+      const stmt = db.prepare('SELECT * FROM pos_config WHERE id = 1');
+      const result = stmt.get() as PosConfig | undefined;
       return result || null;
     } catch (error) {
       console.error('Error getting POS configuration:', error);
@@ -26,27 +26,26 @@ export class SqlitePOSConfigRepository {
   /**
    * Save POS configuration from registration
    */
-  async saveConfiguration(config: POSConfiguration): Promise<void> {
+  async saveConfiguration(config: PosConfig): Promise<void> {
     if (!db) {
       throw new Error('Database not initialized');
     }
 
     try {
       const stmt = db.prepare(`
-        INSERT OR REPLACE INTO pos_configuration
-        (id, pos_id, pos_name, store_id, store_name, device_id, registration_code, registered_at, is_active)
-        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO pos_config
+        (id, pos_uuid, pos_serial_code, store_id, license_key, verifactu_enabled, test_mode, updated_at)
+        VALUES (1, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       stmt.run(
-        config.pos_id,
-        config.pos_name,
+        config.pos_uuid,
+        config.pos_serial_code,
         config.store_id,
-        config.store_name,
-        config.device_id,
-        config.registration_code || null,
-        config.registered_at,
-        config.is_active ?? 1
+        config.license_key,
+        config.verifactu_enabled,
+        config.test_mode,
+        config.updated_at
       );
 
       console.log('✅ POS configuration saved');
@@ -66,8 +65,8 @@ export class SqlitePOSConfigRepository {
 
     try {
       const stmt = db.prepare(`
-        UPDATE pos_configuration
-        SET last_sync_at = ?
+        UPDATE pos_config
+        SET updated_at = ?
         WHERE id = 1
       `);
 

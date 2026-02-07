@@ -1,4 +1,4 @@
-import { POSRegistrationResponse, User } from '@terencio/domain';
+import { PosRegistrationPreviewDto, User, UserDto } from '@terencio/domain';
 import * as bcrypt from 'bcryptjs';
 import { db } from '../db/db';
 import { ApiClient } from './api-client';
@@ -16,7 +16,7 @@ export class SyncService {
   /**
    * Preview registration data without saving (for confirmation screen)
    */
-  async previewRegistration(code: string): Promise<POSRegistrationResponse> {
+  async previewRegistration(code: string): Promise<PosRegistrationPreviewDto> {
     if (!code || code.length !== 6) {
       throw new Error('Registration code must be exactly 6 characters');
     }
@@ -37,40 +37,39 @@ export class SyncService {
       // Mock delay to simulate network request
       await new Promise(resolve => setTimeout(resolve, 1200));
 
-      const response: POSRegistrationResponse = {
+      const response: PosRegistrationPreviewDto = {
         posId: `pos-${code.toLowerCase()}`,
         posName: `Terminal ${code.substring(0, 3)}`,
         storeId: `store-${code.substring(3)}`,
         storeName: 'Main Store Location',
-        deviceId: `DEV-${code}`,
         users: [
           {
             id: 1,
+            uuid: `uuid-admin-${code}`,
             username: 'admin',
-            full_name: 'Administrator',
+            fullName: 'Administrator',
             role: 'ADMIN',
-            pin_hash: pinHash,
-            is_active: 1,
-            deleted_at: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            pinHash: pinHash,
+            isActive: 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           },
           {
             id: 2,
+            uuid: `uuid-cashier-${code}`,
             username: 'cashier',
-            full_name: 'Cashier User',
+            fullName: 'Cashier User',
             role: 'CASHIER',
-            pin_hash: pinHash,
-            is_active: 1,
-            deleted_at: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            pinHash: pinHash,
+            isActive: 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           }
         ]
       };
 
       // Validate response
-      if (!response.posId || !response.deviceId || !response.users) {
+      if (!response.posId || !response.storeName || !response.users) {
         throw new Error('Invalid response from server');
       }
 
@@ -85,10 +84,22 @@ export class SyncService {
   /**
    * Register POS and save configuration (call after preview confirmation)
    */
-  async registerPOS(registrationData: POSRegistrationResponse, code: string): Promise<void> {
+  async registerPOS(registrationData: PosRegistrationPreviewDto, code: string): Promise<void> {
     try {
-      // Save users to local database
-      await this.saveUsers(registrationData.users);
+      // Save users to local database - map UserDto to User
+      const users: User[] = registrationData.users.map((dto: UserDto) => ({
+        id: dto.id,
+        uuid: dto.uuid,
+        username: dto.username,
+        pin_hash: dto.pinHash,
+        full_name: dto.fullName,
+        role: dto.role,
+        permissions_json: null,
+        is_active: dto.isActive,
+        created_at: dto.createdAt,
+        updated_at: dto.updatedAt
+      }));
+      await this.saveUsers(users);
 
       console.log('✅ POS registered successfully:', registrationData.posName);
     } catch (error: any) {

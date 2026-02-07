@@ -1,8 +1,10 @@
 import {
     AppSetting,
+    CashDrawerEvent,
     CashMovement,
     Customer,
     FiscalChainRecord,
+    ManagerOverride,
     Payment,
     PosConfig,
     Product,
@@ -10,6 +12,7 @@ import {
     ProductPrice,
     Promotion,
     Sale,
+    SaleBillingInfo,
     SaleLine,
     Shift,
     Tariff,
@@ -33,9 +36,10 @@ export interface IBaseRepository<T> {
 // SYSTEM & CONFIG
 // ==================================================================================
 export interface IPosConfigRepository {
-  getConfig(): Promise<PosConfig | null>;
-  initialize(config: PosConfig): Promise<void>;
-  update(config: Partial<PosConfig>): Promise<void>;
+  getConfiguration(): Promise<PosConfig | null>;
+  saveConfiguration(config: PosConfig): Promise<void>;
+  updateLastSync(): Promise<void>;
+  isRegistered(): Promise<boolean>;
 }
 
 export interface IAppSettingsRepository {
@@ -58,29 +62,26 @@ export interface IDocumentSequenceRepository {
 export interface IUserRepository extends IBaseRepository<User> {
   findByUsername(username: string): Promise<User | null>;
   findAllActive(): Promise<User[]>;
-  verifyPin(userId: number, pin: string): Promise<boolean>;
+  authenticateWithPin(username: string, pin: string): Promise<User | null>;
+  updatePin(userId: number, newPin: string): Promise<void>;
 }
 
 export interface IShiftRepository extends IBaseRepository<Shift> {
   findOpenShiftByUserId(userId: number): Promise<Shift | null>;
-  findOpenShiftByPosId(posId: string): Promise<Shift | null>;
   findAllByUserId(userId: number): Promise<Shift[]>;
   
   startShift(userId: number, posId: string, amountInitial: number): Promise<Shift>;
-  closeShift(shiftUuid: string, amountCounted: number, notes?: string): Promise<Shift>;
-  
-  // Reporting
-  getShiftSummary(shiftUuid: string): Promise<{
-    expected: number;
-    counted: number;
-    diff: number;
-    movements: CashMovement[];
-  }>;
+  endShift(shiftUuid: string, amountCounted: number, notes?: string): Promise<Shift>;
+  autoCloseShift(shiftUuid: string): Promise<Shift>;
 }
 
 export interface ICashMovementRepository extends IBaseRepository<CashMovement> {
   findByShiftUuid(shiftUuid: string): Promise<CashMovement[]>;
   registerMovement(data: Omit<CashMovement, 'id' | 'created_at'>): Promise<void>;
+}
+
+export interface ICashDrawerEventRepository extends IBaseRepository<CashDrawerEvent> {
+  findByShiftUuid(shiftUuid: string): Promise<CashDrawerEvent[]>;
 }
 
 // ==================================================================================
@@ -105,26 +106,24 @@ export interface IProductRepository extends IBaseRepository<Product> {
   search(query: string): Promise<Product[]>;
   findAllActive(): Promise<Product[]>;
   
-  // Stock management
+  // Stock management (Manual updates now required)
   updateStock(productId: number, quantityChange: number): Promise<void>;
 }
 
 export interface IProductBarcodeRepository {
   findByProduct(productId: number): Promise<ProductBarcode[]>;
-  addBarcode(barcode: ProductBarcode): Promise<void>;
-  removeBarcode(barcode: string): Promise<void>;
+  findByBarcode(barcode: string): Promise<ProductBarcode | null>;
 }
 
 export interface IProductPriceRepository {
   findByProduct(productId: number): Promise<ProductPrice[]>;
   findByTariff(tariffId: number): Promise<ProductPrice[]>;
-  getPrice(productId: number, tariffId: number): Promise<number | null>; // Returns simple price
+  getPrice(productId: number, tariffId: number): Promise<ProductPrice | null>; 
   setPrice(price: ProductPrice): Promise<void>;
 }
 
 export interface IPromotionRepository extends IBaseRepository<Promotion> {
   findAllActive(): Promise<Promotion[]>;
-  findApplicable(date: string): Promise<Promotion[]>;
 }
 
 // ==================================================================================
@@ -132,7 +131,6 @@ export interface IPromotionRepository extends IBaseRepository<Promotion> {
 // ==================================================================================
 export interface ICustomerRepository extends IBaseRepository<Customer> {
   search(query: string): Promise<Customer[]>;
-  findByTaxId(taxId: string): Promise<Customer | null>;
   findAllActive(): Promise<Customer[]>;
 }
 
@@ -141,17 +139,16 @@ export interface ICustomerRepository extends IBaseRepository<Customer> {
 // ==================================================================================
 export interface ISaleRepository extends IBaseRepository<Sale> {
   findByDateRange(startDate: string, endDate: string): Promise<Sale[]>;
-  findByShiftUuid(shiftUuid: string): Promise<Sale[]>;
-  findByFullReference(ref: string): Promise<Sale | null>;
+  findByShiftId(shiftUuid: string): Promise<Sale[]>;
   
   /**
-   * Retreives the complete object graph for a sale (Header, Lines, Payments)
+   * Retreives the complete object graph for a sale (Header, Lines, Payments, BillingInfo)
    */
   findFullSale(saleUuid: string): Promise<{ 
     sale: Sale; 
     lines: SaleLine[]; 
     payments: Payment[]; 
-    // Tax Summary is now calculated on the fly from lines, not stored
+    billingInfo: SaleBillingInfo | null;
   } | null>;
   
   /**
@@ -161,12 +158,19 @@ export interface ISaleRepository extends IBaseRepository<Sale> {
 }
 
 export interface ISaleLineRepository extends IBaseRepository<SaleLine> {
-  findBySaleUuid(saleUuid: string): Promise<SaleLine[]>;
-  deleteBySaleUuid(saleUuid: string): Promise<void>;
+  findBySaleId(saleUuid: string): Promise<SaleLine[]>;
+  deleteBySaleId(saleUuid: string): Promise<void>;
+  
+  // Enterprise status updates
+  voidLine(lineId: number, managerId: number, reason: string): Promise<void>;
 }
 
 export interface IPaymentRepository extends IBaseRepository<Payment> {
-  findBySaleUuid(saleUuid: string): Promise<Payment[]>;
+  findBySaleId(saleUuid: string): Promise<Payment[]>;
+}
+
+export interface IManagerOverrideRepository extends IBaseRepository<ManagerOverride> {
+  findBySaleUuid(saleUuid: string): Promise<ManagerOverride[]>;
 }
 
 // ==================================================================================
@@ -179,10 +183,10 @@ export interface IFiscalChainRepository extends IBaseRepository<FiscalChainRecor
    * Critical: Gets the absolute last record to calculate the next hash.
    * MUST ensure no race conditions (use database locking if needed).
    */
-  getChainHead(): Promise<FiscalChainRecord | null>;
+  getChainHead(deviceSerial: string): Promise<FiscalChainRecord | null>;
   
   /**
    * Checks if there are any gaps in 'chain_sequence_id'.
    */
-  validateChainIntegrity(): Promise<boolean>;
+  validateChainIntegrity(deviceSerial: string): Promise<boolean>;
 }

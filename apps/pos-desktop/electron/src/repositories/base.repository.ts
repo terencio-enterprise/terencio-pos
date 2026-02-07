@@ -24,14 +24,15 @@ export abstract class SqliteBaseRepository<T> implements IBaseRepository<T> {
     return (result as T) || null;
   }
 
-  async create(data: T): Promise<void> {
+  async create(data: Omit<T, 'id' | 'created_at' | 'updated_at'>): Promise<number | string> {
     const keys = Object.keys(data as any);
     const columns = keys.join(', ');
     const placeholders = keys.map(() => '?').join(', ');
     const values = Object.values(data as any);
 
     const stmt = this.getDb().prepare(`INSERT INTO ${this.tableName} (${columns}) VALUES (${placeholders})`);
-    stmt.run(...values);
+    const result = stmt.run(...values);
+    return result.lastInsertRowid as number;
   }
 
   async update(id: string | number, data: Partial<T>): Promise<void> {

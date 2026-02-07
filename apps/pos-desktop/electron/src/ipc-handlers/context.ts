@@ -47,9 +47,9 @@ export function createIpcContext(): IpcContext {
 export async function loadDeviceId(context: IpcContext): Promise<void> {
   try {
     const config = await context.posConfigRepo.getConfiguration();
-    if (config && config.device_id) {
-      context.setCurrentDeviceId(config.device_id);
-      console.log(`📱 Device ID loaded: ${config.device_id}`);
+    if (config && config.pos_uuid) {
+      context.setCurrentDeviceId(config.pos_uuid);
+      console.log(`📱 Device ID loaded: ${config.pos_uuid}`);
     } else {
       console.log('⚠️  No POS configuration found - device not registered');
     }

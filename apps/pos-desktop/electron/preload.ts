@@ -1,11 +1,11 @@
-import { POSRegistrationResponse } from '@terencio/domain';
+import { PosRegistrationPreviewDto } from '@terencio/domain';
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   sync: {
     checkStatus: () => ipcRenderer.invoke('sync:checkStatus'),
     preview: (code: string) => ipcRenderer.invoke('sync:preview', code),
-    confirm: (registrationData: POSRegistrationResponse, code: string) => ipcRenderer.invoke('sync:confirm', registrationData, code),
+    confirm: (registrationData: PosRegistrationPreviewDto, code: string) => ipcRenderer.invoke('sync:confirm', registrationData, code),
     getConfig: () => ipcRenderer.invoke('sync:getConfig')
   },
   auth: {
@@ -19,5 +19,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     end: (countedCash: number, notes?: string) => ipcRenderer.invoke('shift:end', countedCash, notes),
     getCurrent: () => ipcRenderer.invoke('shift:getCurrent'),
     getHistory: () => ipcRenderer.invoke('shift:getHistory')
+  },
+  registration: {
+    preview: (code: string, deviceId: string) => ipcRenderer.invoke('registration:preview', code, deviceId),
+    confirm: (code: string, hardwareId: string) => ipcRenderer.invoke('registration:confirm', code, hardwareId),
+    checkStatus: () => ipcRenderer.invoke('registration:checkStatus'),
+    getConfig: () => ipcRenderer.invoke('registration:getConfig')
   }
 });

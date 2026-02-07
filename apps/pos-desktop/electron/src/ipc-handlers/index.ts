@@ -1,5 +1,6 @@
 import { createIpcContext, IpcContext, loadDeviceId } from './context';
 import { registerAuthHandlers } from './handlers/auth';
+import { registerRegistrationHandlers } from './handlers/registration';
 import { registerShiftHandlers } from './handlers/shift';
 import { registerSyncHandlers } from './handlers/sync';
 
@@ -11,6 +12,7 @@ export function initializeIpcHandlers(): IpcContext {
   registerSyncHandlers(context);
   registerAuthHandlers(context);
   registerShiftHandlers(context);
+  registerRegistrationHandlers(context);
 
   console.log('✅ IPC handlers initialized');
   

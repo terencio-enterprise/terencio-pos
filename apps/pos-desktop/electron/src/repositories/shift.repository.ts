@@ -1,4 +1,4 @@
-import { IShiftRepository, Shift } from '@terencio/domain';
+import { BooleanInt, IShiftRepository, Shift, ShiftStatus } from '@terencio/domain';
 import { v4 as uuidv4 } from 'uuid';
 import { SqliteBaseRepository } from './base.repository';
 
@@ -12,38 +12,49 @@ export class SqliteShiftRepository extends SqliteBaseRepository<Shift> implement
   }
 
   async findAllByUserId(userId: number): Promise<Shift[]> {
-    const stmt = this.getDb().prepare('SELECT * FROM shifts WHERE user_id = ? ORDER BY start_time DESC');
+    const stmt = this.getDb().prepare('SELECT * FROM shifts WHERE user_id = ? ORDER BY opened_at DESC');
     return stmt.all(userId) as Shift[];
   }
 
-  async startShift(userId: number, deviceId: string, startingCash: number): Promise<Shift> {
+  async findByUuid(uuid: string): Promise<Shift | null> {
+    const stmt = this.getDb().prepare('SELECT * FROM shifts WHERE uuid = ?');
+    return (stmt.get(uuid) as Shift) || null;
+  }
+
+  async startShift(userId: number, posId: string, amountInitial: number): Promise<Shift> {
     // Check if user already has an open shift
     const existingShift = await this.findOpenShiftByUserId(userId);
     if (existingShift) {
       throw new Error('User already has an open shift. Please close the existing shift before starting a new one.');
     }
 
-    const shift: Shift = {
+    const shift: Omit<Shift, 'id'> = {
       uuid: uuidv4(),
       user_id: userId,
-      device_id: deviceId,
-      start_time: new Date().toISOString(),
-      end_time: null,
-      starting_cash: startingCash,
-      expected_cash: startingCash, // Will be updated when shift ends
-      counted_cash: 0,
-      discrepancy: 0,
-      status: 'OPEN',
-      notes: null,
-      synced: 0
+      pos_id: posId,
+      opened_at: new Date().toISOString(),
+      closed_at: null,
+      amount_initial: amountInitial,
+      amount_system: amountInitial,
+      amount_counted: 0,
+      amount_diff: 0,
+      status: 'OPEN' as ShiftStatus,
+      z_report_number: null,
+      z_series: null,
+      z_year: null,
+      z_report_hash: null,
+      z_report_signature: null,
+      reopened: 0 as BooleanInt,
+      reopened_by_user_id: null,
+      reopened_reason: null
     };
 
-    await this.create(shift);
-    return shift;
+    const id = await this.create(shift);
+    return { ...shift, id: id as number } as Shift;
   }
 
   async endShift(shiftId: string, countedCash: number, notes?: string): Promise<Shift> {
-    const shift = await this.findById(shiftId);
+    const shift = await this.findByUuid(shiftId);
     
     if (!shift) {
       throw new Error('Shift not found');
@@ -54,20 +65,19 @@ export class SqliteShiftRepository extends SqliteBaseRepository<Shift> implement
     }
 
     // Calculate expected cash from sales
-    // For now, we'll use starting_cash + sales total
-    // TODO: Add logic to calculate from sales table
     const expectedCash = await this.calculateExpectedCash(shiftId);
     
     const discrepancy = countedCash - expectedCash;
 
     const stmt = this.getDb().prepare(`
       UPDATE shifts 
-      SET end_time = ?, 
+      SET closed_at = ?, 
           status = 'CLOSED', 
-          counted_cash = ?, 
-          expected_cash = ?,
-          discrepancy = ?,
-          notes = ?
+          amount_counted = ?, 
+          amount_system = ?,
+          amount_diff = ?,
+          notes = ?,
+          updated_at = ?
       WHERE uuid = ?
     `);
 
@@ -77,15 +87,16 @@ export class SqliteShiftRepository extends SqliteBaseRepository<Shift> implement
       expectedCash,
       discrepancy,
       notes || null,
+      new Date().toISOString(),
       shiftId
     );
 
     // Return updated shift
-    return await this.findById(shiftId) as Shift;
+    return await this.findByUuid(shiftId) as Shift;
   }
 
   async autoCloseShift(shiftId: string): Promise<Shift> {
-    const shift = await this.findById(shiftId);
+    const shift = await this.findByUuid(shiftId);
     
     if (!shift) {
       throw new Error('Shift not found');
@@ -101,12 +112,13 @@ export class SqliteShiftRepository extends SqliteBaseRepository<Shift> implement
     // Auto-close: counted_cash = expected_cash (no discrepancy)
     const stmt = this.getDb().prepare(`
       UPDATE shifts 
-      SET end_time = ?, 
+      SET closed_at = ?, 
           status = 'CLOSED', 
-          counted_cash = ?, 
-          expected_cash = ?,
-          discrepancy = 0,
-          notes = 'Auto-closed on logout'
+          amount_counted = ?, 
+          amount_system = ?,
+          amount_diff = 0,
+          notes = 'Auto-closed on logout',
+          updated_at = ?
       WHERE uuid = ?
     `);
 
@@ -114,11 +126,12 @@ export class SqliteShiftRepository extends SqliteBaseRepository<Shift> implement
       new Date().toISOString(),
       expectedCash,
       expectedCash,
+      new Date().toISOString(),
       shiftId
     );
 
     // Return updated shift
-    return await this.findById(shiftId) as Shift;
+    return await this.findByUuid(shiftId) as Shift;
   }
 
   private async calculateExpectedCash(shiftId: string): Promise<number> {
@@ -133,8 +146,8 @@ export class SqliteShiftRepository extends SqliteBaseRepository<Shift> implement
     const result = stmt.get(shiftId) as { cash_total: number };
     
     // Get the shift's starting cash
-    const shift = await this.findById(shiftId);
-    const startingCash = shift?.starting_cash || 0;
+    const shift = await this.findByUuid(shiftId);
+    const startingCash = shift?.amount_initial || 0;
     
     return startingCash + result.cash_total;
   }
