@@ -1,294 +1,302 @@
 export type ISODateString = string; // Format: YYYY-MM-DD HH:mm:ss
+export type JsonString = string;    // JSON stringified object
+export type BooleanInt = 0 | 1;     // SQLite uses 0/1 for booleans
 
 // ==================================================================================
-// 1. APP SETTINGS
+// 1. CONFIGURATION & SYSTEM
 // ==================================================================================
-export interface AppSettings {
+export interface PosConfig {
+  id: number; // Always 1
+  pos_uuid: string;         // Hardware ID
+  pos_serial_code: string;  // Fiscal ID (e.g. "TPV-01")
+  store_id: string;
+  license_key: string | null;
+  verifactu_enabled: BooleanInt;
+  test_mode: BooleanInt;
+  updated_at: ISODateString;
+}
+
+export interface AppSetting {
   key: string;
   value: string | null;
   description: string | null;
+  is_system: BooleanInt;
 }
 
 // ==================================================================================
-// 2. USERS (Synced from backend)
+// 2. ACCESS CONTROL & STAFF
 // ==================================================================================
 export type UserRole = 'ADMIN' | 'MANAGER' | 'CASHIER' | string;
 
 export interface User {
   id: number;
+  uuid: string;
   username: string;
-  pin_hash: string | null;
+  pin_hash: string;
   full_name: string | null;
   role: UserRole;
-  is_active: number; // 0 or 1
+  permissions_json: JsonString | null; // e.g., { "can_void": true }
+  is_active: BooleanInt;
   created_at: ISODateString;
   updated_at: ISODateString;
-  deleted_at: ISODateString | null;
 }
 
 // ==================================================================================
-// 3. SHIFTS (POS Generated)
-// ==================================================================================
-export type ShiftStatus = 'OPEN' | 'CLOSED';
-
-export interface Shift {
-  uuid: string;
-  user_id: number;
-  device_id: string | null;
-  start_time: ISODateString;
-  end_time: ISODateString | null;
-  starting_cash: number;
-  expected_cash: number;
-  counted_cash: number;
-  discrepancy: number;
-  status: ShiftStatus;
-  notes: string | null;
-  synced: number; // 0 or 1
-}
-
-// ==================================================================================
-// 4. TAXES (Synced from backend)
+// 3. MASTER DATA (CATALOG & PRICING)
 // ==================================================================================
 export interface Tax {
   id: number;
   name: string;
   rate: number;
-  is_default: number;
-  active: number;
-  updated_at: ISODateString;
-  deleted_at: ISODateString | null;
+  surcharge: number;
+  code_aeat: string | null;
+  valid_from: ISODateString | null;
+  valid_until: ISODateString | null;
+  active: BooleanInt;
 }
 
-// ==================================================================================
-// 5. TARIFFS (Synced from backend)
-// ==================================================================================
+export interface Product {
+  id: number;
+  uuid: string;
+  
+  // Display
+  name: string;
+  short_name: string | null; // Max 20 chars for ticket
+  description: string | null;
+  
+  // Categorization
+  category_id: number | null;
+  family_code: string | null;
+  
+  // Fiscal
+  tax_id: number;
+  
+  // Logic Flags
+  is_weighted: BooleanInt;       // PLU logic
+  is_service: BooleanInt;        // No stock tracking
+  is_age_restricted: BooleanInt;
+  requires_manager: BooleanInt;
+  
+  // Inventory
+  stock_tracking: BooleanInt;
+  stock_current: number;
+  min_stock_alert: number;
+  
+  // Meta
+  image_url: string | null;
+  active: BooleanInt;
+  updated_at: ISODateString;
+}
+
+// New: Multi-barcode support
+export type BarcodeType = 'EAN13' | 'EAN8' | 'UPC' | 'CODE128' | 'PLU_PREFIX';
+
+export interface ProductBarcode {
+  barcode: string; // PK
+  product_id: number;
+  type: BarcodeType;
+  is_primary: BooleanInt;
+  quantity_factor: number; // For multipacks (e.g., 6 for a 6-pack)
+  created_at: ISODateString;
+}
+
 export interface Tariff {
   id: number;
   name: string;
-  is_tax_included: number;
   priority: number;
-  active: number;
-  updated_at: ISODateString;
-  deleted_at: ISODateString | null;
+  active: BooleanInt;
 }
 
-// ==================================================================================
-// 6. CUSTOMERS (Synced from backend)
-// ==================================================================================
-export interface Customer {
-  id: number;
-  code: string | null;
-  tax_id: string | null;
-  business_name: string | null;
-  trade_name: string | null;
-  address: string | null;
-  city: string | null;
-  zip_code: string | null;
-  email: string | null;
-  phone: string | null;
-  tariff_id: number | null;
-  is_credit_allowed: number;
-  tier_level: string | null;
-  notes: string | null;
-  active: number;
-  created_at: ISODateString;
-  updated_at: ISODateString;
-  deleted_at: ISODateString | null;
-}
-
-// ==================================================================================
-// 7. PRODUCTS (Synced from backend)
-// ==================================================================================
-export interface Product {
-  id: number;
-  reference: string | null;
-  barcode: string | null;
-  name: string;
-  description: string | null;
-  category: string | null;
-  tax_id: number;
-  requires_weight: number;
-  is_discountable: number;
-  is_refundable: number;
-  age_restriction: number;
-  image_path: string | null;
-  stock_control: number;
-  stock_current: number;
-  active: number;
-  created_at: ISODateString;
-  updated_at: ISODateString;
-  deleted_at: ISODateString | null;
-}
-
-// ==================================================================================
-// 8. PRODUCT PRICES (Synced from backend)
-// ==================================================================================
 export interface ProductPrice {
   product_id: number;
   tariff_id: number;
   price: number;
-  updated_at: ISODateString;
+  created_at: ISODateString;
 }
 
-// ==================================================================================
-// 9. PROMOTIONS (Synced from backend)
-// ==================================================================================
+export type PromotionType = 'DISC_PERCENT' | '3X2' | 'MIX_MATCH';
+
 export interface Promotion {
   id: number;
   name: string;
-  type: string;
-  start_date: ISODateString | null;
-  end_date: ISODateString | null;
+  type: PromotionType;
+  start_date: ISODateString;
+  end_date: ISODateString;
   priority: number;
-  rules_json: string | null;
-  active: number;
-  updated_at: ISODateString;
-  deleted_at: ISODateString | null;
+  rules_json: JsonString; // Complex rules engine
+  active: BooleanInt;
 }
 
 // ==================================================================================
-// 10. SALES (POS Generated)
+// 4. CUSTOMERS (CRM)
 // ==================================================================================
-export type SaleStatus = 'COMPLETED' | 'CANCELLED';
-export type SaleDocType = 'FV' | 'FR' | string; // Factura Venta, Rectificativa etc.
+export interface Customer {
+  id: number;
+  uuid: string;
+  tax_id: string | null; // NIF/CIF
+  legal_name: string | null;
+  commercial_name: string | null;
+  address: string | null;
+  zip_code: string | null;
+  email: string | null;
+  phone: string | null;
+  
+  tariff_id: number | null;
+  allow_credit: BooleanInt;
+  credit_limit: number;
+  
+  verifactu_ref: string | null;
+  active: BooleanInt;
+  updated_at: ISODateString;
+}
+
+// ==================================================================================
+// 5. OPERATIONS: SHIFTS & CASH
+// ==================================================================================
+export type ShiftStatus = 'OPEN' | 'CLOSED' | 'Z_REPORT_PRINTED';
+
+export interface Shift {
+  id: number;
+  uuid: string;
+  user_id: number;
+  pos_id: string; // Hardware identifier
+  
+  opened_at: ISODateString;
+  closed_at: ISODateString | null;
+  
+  amount_initial: number; // Fondo de caja
+  amount_system: number;  // Calculated
+  amount_counted: number; // User input
+  amount_diff: number;    // Discrepancy
+  
+  status: ShiftStatus;
+  z_report_number: number | null;
+}
+
+export type CashMovementType = 'IN' | 'OUT';
+
+export interface CashMovement {
+  id: number;
+  shift_uuid: string;
+  user_id: number;
+  type: CashMovementType;
+  amount: number;
+  reason: string | null;
+  created_at: ISODateString;
+}
+
+// ==================================================================================
+// 6. SALES & TRANSACTIONS
+// ==================================================================================
+export interface DocSequence {
+  series: string;
+  year: number;
+  current_value: number;
+}
+
+export type SaleStatus = 'DRAFT' | 'COMPLETED' | 'VOIDED' | 'REFUNDED';
 
 export interface Sale {
+  id: number;
   uuid: string;
   
-  // Identificación
-  doc_series: string;
-  doc_number: number;
-  doc_full_id: string;
+  // Document ID
+  series: string;
+  number: number;
+  full_reference: string; // e.g., "F24-0001"
   
-  doc_type: SaleDocType;
-  issue_date: ISODateString;
+  // Timing
+  created_at: ISODateString; // Basket start
+  issued_at: ISODateString | null; // Fiscal issuance
   
-  // Estado
-  is_issued: number;
-  status: SaleStatus;
-  
-  // Rectificación
-  rectification_type: string | null;
-  rectified_sale_uuid: string | null;
-  
-  // Contexto
-  shift_uuid: string | null;
-  customer_id: number | null;
+  // Context
+  shift_uuid: string;
   user_id: number;
+  customer_id: number | null;
   
-  // Totales
+  // Status
+  status: SaleStatus;
+  is_fiscal_issued: BooleanInt;
+  
+  // Rectification
+  rectifies_uuid: string | null;
+  rectification_reason: string | null;
+  
+  // Financials
   total_net: number;
-  total_taxes: number;
+  total_tax: number;
   total_amount: number;
   
-  notes: string | null;
-  created_at: ISODateString;
-  updated_at: ISODateString;
+  // Verification
+  qr_data: string | null; // VeriFactu QR Content
 }
 
-// ==================================================================================
-// 11. FISCAL RECORDS (VERIFACTU)
-// ==================================================================================
-export type FiscalRecordType = 'ALTA' | 'ANULACION';
-
-export interface FiscalRecord {
-  uuid: string;
-  sale_uuid: string;
-  
-  fiscal_sequence: number;
-  record_type: FiscalRecordType;
-  
-  previous_hash: string | null;
-  hash: string;
-  fingerprint: string;
-  signature: string | null;
-  
-  created_at: ISODateString;
-}
-
-// ==================================================================================
-// 12. SALE LINES (POS Generated)
-// ==================================================================================
 export interface SaleLine {
-  uuid: string;
+  id: number;
   sale_uuid: string;
+  
   product_id: number | null;
-  product_name: string;
+  barcode_used: string | null;
+  description_snapshot: string;
   
   quantity: number;
   unit_price: number;
   
-  // Snapshot Fiscal
-  tax_id: number | null;
-  tax_rate: number;
-  tax_amount: number;
-  
+  // Discounts
   discount_percent: number;
   discount_amount: number;
-  promotion_id: number | null;
+  promotion_applied_id: number | null;
+  
+  // Taxes
+  tax_id: number;
+  tax_rate_snapshot: number;
   
   total_line: number;
-  
-  created_at: ISODateString;
 }
 
-// ==================================================================================
-// 13. SALE TAX SUMMARY (POS Generated)
-// ==================================================================================
-export interface SaleTaxSummary {
-  sale_uuid: string;
-  tax_id: number | null;
-  tax_name_snapshot: string;
-  tax_rate_snapshot: number;
-  base_amount: number;
-  tax_amount: number;
-}
-
-// ==================================================================================
-// 14. PAYMENTS
-// ==================================================================================
-export type PaymentMethod = 'CASH' | 'CARD' | 'TRANSFER' | string;
+export type PaymentMethod = 'CASH' | 'CARD' | 'VOUCHER' | 'CREDIT';
 
 export interface Payment {
-  uuid: string;
+  id: number;
   sale_uuid: string;
   method: PaymentMethod;
   amount: number;
+  details_json: JsonString | null;
   created_at: ISODateString;
 }
 
 // ==================================================================================
-// 15. DOCUMENT SEQUENCES
+// 7. VERIFACTU CORE (FISCAL LEDGER)
 // ==================================================================================
-export interface DocumentSequence {
-  series: string;
-  device_id: string;
-  current_value: number;
-}
+export type FiscalEventType = 'ALTA' | 'ANULACION';
 
-// ==================================================================================
-// 16. POS CONFIGURATION
-// ==================================================================================
-export interface POSConfiguration {
-  id?: number;
-  pos_id: string;
-  pos_name: string;
-  store_id: string;
-  store_name: string;
-  device_id: string;
-  registration_code?: string;
-  registered_at: string;
-  last_sync_at?: string;
-  is_active: number; // 0 or 1
-  created_at?: string;
+export interface FiscalChainRecord {
+  id: number;
+  uuid: string;
+  
+  sale_uuid: string;
+  event_type: FiscalEventType;
+  
+  // Chain Security
+  previous_record_hash: string;
+  chain_sequence_id: number;
+  
+  // Data Snapshot
+  issuer_nif: string;
+  invoice_series: string;
+  invoice_number: string;
+  invoice_date: string;
+  invoice_amount: number;
+  
+  // Cryptography
+  record_hash: string;
+  signature: string | null;
+  system_fingerprint: string;
+  
+  // AEAT Sync
+  sent_to_aeat: BooleanInt;
+  aeat_csv: string | null;
+  aeat_response_json: JsonString | null;
+  
+  created_at: ISODateString;
 }
-
-export interface POSRegistrationResponse {
-  posId: string;
-  posName: string;
-  storeId: string;
-  storeName: string;
-  deviceId: string;
-  users: User[];
-}
-
