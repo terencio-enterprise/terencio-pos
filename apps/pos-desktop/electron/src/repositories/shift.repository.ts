@@ -84,6 +84,43 @@ export class SqliteShiftRepository extends SqliteBaseRepository<Shift> implement
     return await this.findById(shiftId) as Shift;
   }
 
+  async autoCloseShift(shiftId: string): Promise<Shift> {
+    const shift = await this.findById(shiftId);
+    
+    if (!shift) {
+      throw new Error('Shift not found');
+    }
+
+    if (shift.status === 'CLOSED') {
+      throw new Error('Shift is already closed');
+    }
+
+    // Calculate expected cash from sales
+    const expectedCash = await this.calculateExpectedCash(shiftId);
+    
+    // Auto-close: counted_cash = expected_cash (no discrepancy)
+    const stmt = this.getDb().prepare(`
+      UPDATE shifts 
+      SET end_time = ?, 
+          status = 'CLOSED', 
+          counted_cash = ?, 
+          expected_cash = ?,
+          discrepancy = 0,
+          notes = 'Auto-closed on logout'
+      WHERE uuid = ?
+    `);
+
+    stmt.run(
+      new Date().toISOString(),
+      expectedCash,
+      expectedCash,
+      shiftId
+    );
+
+    // Return updated shift
+    return await this.findById(shiftId) as Shift;
+  }
+
   private async calculateExpectedCash(shiftId: string): Promise<number> {
     // Query sales table to get total cash sales for this shift
     const stmt = this.getDb().prepare(`

@@ -1,6 +1,7 @@
 import { User } from '@terencio/domain'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useShiftStore } from './shift-store'
 
 interface AuthState {
   user: Omit<User, 'pin_hash'> | null
@@ -11,7 +12,7 @@ interface AuthState {
   
   loadUsers: () => Promise<void>
   login: (username: string, pin: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   clearError: () => void
 }
 
@@ -52,6 +53,9 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           })
+
+          // Shift is automatically started in the backend
+          // No need to manually start it here
         } catch (error) {
           set({
             error: error instanceof Error ? error.message : 'Login failed',
@@ -61,13 +65,29 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
-        window.electronAPI.auth.logout()
-        set({
-          user: null,
-          isAuthenticated: false,
-          error: null,
-        })
+      logout: async () => {
+        try {
+          // Shift is automatically closed in the backend
+          await window.electronAPI.auth.logout()
+          
+          // Clear shift from UI store
+          useShiftStore.getState().clearShift()
+          
+          set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+          })
+        } catch (error) {
+          console.error('Logout error:', error)
+          // Still clear the user state even if logout fails
+          useShiftStore.getState().clearShift()
+          set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+          })
+        }
       },
 
       clearError: () => {

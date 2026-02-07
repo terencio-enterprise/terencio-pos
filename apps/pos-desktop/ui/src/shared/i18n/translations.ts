@@ -121,7 +121,8 @@ const es = {
   common: {
     error: 'Ocurrió un error',
     retry: 'Reintentar',
-    cancel: 'Cancelar'
+    cancel: 'Cancelar',
+    close: 'Cerrar'
   }
 };
 

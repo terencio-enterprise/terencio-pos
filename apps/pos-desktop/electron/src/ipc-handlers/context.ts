@@ -1,4 +1,5 @@
 import { User } from '@terencio/domain';
+import { SqliteAppSettingsRepository } from '../repositories/master-data.repository';
 import { SqlitePOSConfigRepository } from '../repositories/pos-config.repository';
 import { SqliteShiftRepository } from '../repositories/shift.repository';
 import { SqliteUserRepository } from '../repositories/user.repository';
@@ -8,6 +9,7 @@ export interface IpcContext {
   userRepo: SqliteUserRepository;
   shiftRepo: SqliteShiftRepository;
   posConfigRepo: SqlitePOSConfigRepository;
+  appSettingsRepo: SqliteAppSettingsRepository;
   syncService: SyncService;
   getCurrentUser: () => User | null;
   setCurrentUser: (user: User | null) => void;
@@ -19,6 +21,7 @@ export function createIpcContext(): IpcContext {
   const userRepo = new SqliteUserRepository();
   const shiftRepo = new SqliteShiftRepository();
   const posConfigRepo = new SqlitePOSConfigRepository();
+  const appSettingsRepo = new SqliteAppSettingsRepository();
   const syncService = new SyncService();
 
   let currentUser: User | null = null;
@@ -28,6 +31,7 @@ export function createIpcContext(): IpcContext {
     userRepo,
     shiftRepo,
     posConfigRepo,
+    appSettingsRepo,
     syncService,
     getCurrentUser: () => currentUser,
     setCurrentUser: (user: User | null) => {

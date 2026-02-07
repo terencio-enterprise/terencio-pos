@@ -12,6 +12,7 @@ interface ShiftState {
   endShift: (countedCash: number, notes?: string) => Promise<void>
   loadHistory: () => Promise<void>
   clearError: () => void
+  clearShift: () => void
 }
 
 export const useShiftStore = create<ShiftState>((set) => ({
@@ -93,5 +94,9 @@ export const useShiftStore = create<ShiftState>((set) => ({
 
   clearError: () => {
     set({ error: null })
+  },
+
+  clearShift: () => {
+    set({ currentShift: null })
   },
 }))

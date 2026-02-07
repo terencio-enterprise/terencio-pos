@@ -41,6 +41,9 @@ export interface IUserRepository extends IBaseRepository<User> {
 export interface IShiftRepository extends IBaseRepository<Shift> {
   findOpenShiftByUserId(userId: string): Promise<Shift | null>;
   findAllByUserId(userId: string): Promise<Shift[]>;
+  startShift(userId: string, deviceId: string, startingCash: number): Promise<Shift>;
+  endShift(shiftId: string, countedCash: number, notes?: string): Promise<Shift>;
+  autoCloseShift(shiftId: string): Promise<Shift>;
 }
 
 export interface ITaxRepository extends IBaseRepository<Tax> {
