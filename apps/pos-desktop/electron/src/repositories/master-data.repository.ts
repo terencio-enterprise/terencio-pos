@@ -13,11 +13,11 @@ import { db } from '../db/db';
 import { SqliteBaseRepository } from './base.repository';
 
 // ==================================================================================
-// TAX
+// TAX (Synced from backend)
 // ==================================================================================
 export class SqliteTaxRepository extends SqliteBaseRepository<Tax> implements ITaxRepository {
   protected tableName = 'taxes';
-  protected primaryKey = 'uuid';
+  protected primaryKey = 'id';
 
   async findAllActive(): Promise<Tax[]> {
     const stmt = this.getDb().prepare('SELECT * FROM taxes WHERE active = 1 AND deleted_at IS NULL');
@@ -31,11 +31,11 @@ export class SqliteTaxRepository extends SqliteBaseRepository<Tax> implements IT
 }
 
 // ==================================================================================
-// TARIFF
+// TARIFF (Synced from backend)
 // ==================================================================================
 export class SqliteTariffRepository extends SqliteBaseRepository<Tariff> implements ITariffRepository {
   protected tableName = 'tariffs';
-  protected primaryKey = 'uuid';
+  protected primaryKey = 'id';
 
   async findAllActive(): Promise<Tariff[]> {
     const stmt = this.getDb().prepare('SELECT * FROM tariffs WHERE active = 1 AND deleted_at IS NULL ORDER BY priority DESC');
@@ -44,11 +44,11 @@ export class SqliteTariffRepository extends SqliteBaseRepository<Tariff> impleme
 }
 
 // ==================================================================================
-// PROMOTION
+// PROMOTION (Synced from backend)
 // ==================================================================================
 export class SqlitePromotionRepository extends SqliteBaseRepository<Promotion> implements IPromotionRepository {
   protected tableName = 'promotions';
-  protected primaryKey = 'uuid';
+  protected primaryKey = 'id';
 
   async findAllActive(): Promise<Promotion[]> {
     const now = new Date().toISOString(); // Simple string compare works for ISO

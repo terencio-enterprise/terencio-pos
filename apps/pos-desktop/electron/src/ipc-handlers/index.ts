@@ -23,7 +23,7 @@ export async function cleanupOnAppQuit(context: IpcContext): Promise<void> {
     
     if (currentUser) {
       // Check if user has an open shift
-      const openShift = await context.shiftRepo.findOpenShiftByUserId(currentUser.uuid);
+      const openShift = await context.shiftRepo.findOpenShiftByUserId(currentUser.id);
       
       if (openShift) {
         console.log(`🔄 Auto-closing shift for ${currentUser.username} on app quit...`);

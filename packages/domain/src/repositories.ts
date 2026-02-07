@@ -17,10 +17,10 @@ import {
 
 export interface IBaseRepository<T> {
   findAll(): Promise<T[]>;
-  findById(id: string): Promise<T | null>;
+  findById(id: string | number): Promise<T | null>;
   create(data: T): Promise<void>;
-  update(id: string, data: Partial<T>): Promise<void>;
-  delete(id: string): Promise<void>;
+  update(id: string | number, data: Partial<T>): Promise<void>;
+  delete(id: string | number): Promise<void>;
 }
 
 // ==================================================================================
@@ -39,9 +39,9 @@ export interface IUserRepository extends IBaseRepository<User> {
 }
 
 export interface IShiftRepository extends IBaseRepository<Shift> {
-  findOpenShiftByUserId(userId: string): Promise<Shift | null>;
-  findAllByUserId(userId: string): Promise<Shift[]>;
-  startShift(userId: string, deviceId: string, startingCash: number): Promise<Shift>;
+  findOpenShiftByUserId(userId: number): Promise<Shift | null>;
+  findAllByUserId(userId: number): Promise<Shift[]>;
+  startShift(userId: number, deviceId: string, startingCash: number): Promise<Shift>;
   endShift(shiftId: string, countedCash: number, notes?: string): Promise<Shift>;
   autoCloseShift(shiftId: string): Promise<Shift>;
 }
@@ -68,9 +68,9 @@ export interface IProductRepository extends IBaseRepository<Product> {
 }
 
 export interface IProductPriceRepository {
-  findByProduct(productUuid: string): Promise<ProductPrice[]>;
-  findByTariff(tariffUuid: string): Promise<ProductPrice[]>;
-  getPrice(productUuid: string, tariffUuid: string): Promise<ProductPrice | null>;
+  findByProduct(productId: number): Promise<ProductPrice[]>;
+  findByTariff(tariffId: number): Promise<ProductPrice[]>;
+  getPrice(productId: number, tariffId: number): Promise<ProductPrice | null>;
   setPrice(price: ProductPrice): Promise<void>;
 }
 

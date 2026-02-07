@@ -45,7 +45,7 @@ export class SyncService {
         deviceId: `DEV-${code}`,
         users: [
           {
-            uuid: `user-${code}`,
+            id: 1,
             username: 'admin',
             full_name: 'Administrator',
             role: 'ADMIN',
@@ -56,7 +56,7 @@ export class SyncService {
             updated_at: new Date().toISOString()
           },
           {
-            uuid: `user-${code}-2`,
+            id: 2,
             username: 'cashier',
             full_name: 'Cashier User',
             role: 'CASHIER',
@@ -107,14 +107,14 @@ export class SyncService {
 
     try {
       const insertStmt = db.prepare(`
-        INSERT OR REPLACE INTO users (uuid, username, pin_hash, full_name, role, is_active, created_at, updated_at)
+        INSERT OR REPLACE INTO users (id, username, pin_hash, full_name, role, is_active, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const transaction = db.transaction((users: User[]) => {
         for (const user of users) {
           insertStmt.run(
-            user.uuid,
+            user.id,
             user.username,
             user.pin_hash,
             user.full_name,

@@ -6,7 +6,7 @@ export function registerAuthHandlers(context: IpcContext) {
     try {
       const users = await context.userRepo.findAllActive();
       return users.map(u => ({
-        uuid: u.uuid,
+        id: u.id,
         username: u.username,
         full_name: u.full_name,
         role: u.role,
@@ -32,7 +32,7 @@ export function registerAuthHandlers(context: IpcContext) {
       // Automatically start a shift in the background (for tracking purposes)
       try {
         await context.shiftRepo.startShift(
-          user.uuid,
+          user.id,
           context.getCurrentDeviceId(),
           0 // Starting cash: $0 for automatic shifts
         );
@@ -43,7 +43,7 @@ export function registerAuthHandlers(context: IpcContext) {
       }
 
       return {
-        uuid: user.uuid,
+        id: user.id,
         username: user.username,
         full_name: user.full_name,
         role: user.role,
@@ -63,7 +63,7 @@ export function registerAuthHandlers(context: IpcContext) {
       // If there's a logged-in user, close their shift automatically
       if (currentUser) {
         try {
-          const openShift = await context.shiftRepo.findOpenShiftByUserId(currentUser.uuid);
+          const openShift = await context.shiftRepo.findOpenShiftByUserId(currentUser.id);
           if (openShift) {
             await context.shiftRepo.autoCloseShift(openShift.uuid);
             console.log(`Shift closed automatically for user ${currentUser.username}`);
@@ -89,7 +89,7 @@ export function registerAuthHandlers(context: IpcContext) {
     }
 
     return {
-      uuid: currentUser.uuid,
+      id: currentUser.id,
       username: currentUser.username,
       full_name: currentUser.full_name,
       role: currentUser.role,

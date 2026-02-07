@@ -4,7 +4,7 @@ import { SqliteBaseRepository } from './base.repository';
 
 export class SqliteUserRepository extends SqliteBaseRepository<User> implements IUserRepository {
   protected tableName = 'users';
-  protected primaryKey = 'uuid';
+  protected primaryKey = 'id';
 
   async findByUsername(username: string): Promise<User | null> {
     const stmt = this.getDb().prepare('SELECT * FROM users WHERE username = ?');
@@ -39,17 +39,17 @@ export class SqliteUserRepository extends SqliteBaseRepository<User> implements 
     return user;
   }
 
-  async updatePin(userId: string, newPin: string): Promise<void> {
+  async updatePin(userId: number, newPin: string): Promise<void> {
     const saltRounds = 10;
     const pinHash = await bcrypt.hash(newPin, saltRounds);
     
-    const stmt = this.getDb().prepare('UPDATE users SET pin_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ?');
+    const stmt = this.getDb().prepare('UPDATE users SET pin_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
     stmt.run(pinHash, userId);
   }
 
   // Override delete to soft delete
-  async delete(id: string): Promise<void> {
-     const stmt = this.getDb().prepare('UPDATE users SET deleted_at = CURRENT_TIMESTAMP, is_active = 0 WHERE uuid = ?');
+  async delete(id: string | number): Promise<void> {
+     const stmt = this.getDb().prepare('UPDATE users SET deleted_at = CURRENT_TIMESTAMP, is_active = 0 WHERE id = ?');
      stmt.run(id);
   }
 }

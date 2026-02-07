@@ -10,12 +10,12 @@ export interface AppSettings {
 }
 
 // ==================================================================================
-// 2. USERS
+// 2. USERS (Synced from backend)
 // ==================================================================================
 export type UserRole = 'ADMIN' | 'MANAGER' | 'CASHIER' | string;
 
 export interface User {
-  uuid: string;
+  id: number;
   username: string;
   pin_hash: string | null;
   full_name: string | null;
@@ -27,13 +27,13 @@ export interface User {
 }
 
 // ==================================================================================
-// 3. SHIFTS
+// 3. SHIFTS (POS Generated)
 // ==================================================================================
 export type ShiftStatus = 'OPEN' | 'CLOSED';
 
 export interface Shift {
   uuid: string;
-  user_uuid: string;
+  user_id: number;
   device_id: string | null;
   start_time: ISODateString;
   end_time: ISODateString | null;
@@ -47,10 +47,10 @@ export interface Shift {
 }
 
 // ==================================================================================
-// 4. TAXES
+// 4. TAXES (Synced from backend)
 // ==================================================================================
 export interface Tax {
-  uuid: string;
+  id: number;
   name: string;
   rate: number;
   is_default: number;
@@ -60,10 +60,10 @@ export interface Tax {
 }
 
 // ==================================================================================
-// 5. TARIFFS
+// 5. TARIFFS (Synced from backend)
 // ==================================================================================
 export interface Tariff {
-  uuid: string;
+  id: number;
   name: string;
   is_tax_included: number;
   priority: number;
@@ -73,10 +73,10 @@ export interface Tariff {
 }
 
 // ==================================================================================
-// 6. CUSTOMERS
+// 6. CUSTOMERS (Synced from backend)
 // ==================================================================================
 export interface Customer {
-  uuid: string;
+  id: number;
   code: string | null;
   tax_id: string | null;
   business_name: string | null;
@@ -86,7 +86,7 @@ export interface Customer {
   zip_code: string | null;
   email: string | null;
   phone: string | null;
-  tariff_uuid: string | null;
+  tariff_id: number | null;
   is_credit_allowed: number;
   tier_level: string | null;
   notes: string | null;
@@ -97,16 +97,16 @@ export interface Customer {
 }
 
 // ==================================================================================
-// 7. PRODUCTS
+// 7. PRODUCTS (Synced from backend)
 // ==================================================================================
 export interface Product {
-  uuid: string;
+  id: number;
   reference: string | null;
   barcode: string | null;
   name: string;
   description: string | null;
   category: string | null;
-  tax_uuid: string;
+  tax_id: number;
   requires_weight: number;
   is_discountable: number;
   is_refundable: number;
@@ -121,20 +121,20 @@ export interface Product {
 }
 
 // ==================================================================================
-// 8. PRODUCT PRICES
+// 8. PRODUCT PRICES (Synced from backend)
 // ==================================================================================
 export interface ProductPrice {
-  product_uuid: string;
-  tariff_uuid: string;
+  product_id: number;
+  tariff_id: number;
   price: number;
   updated_at: ISODateString;
 }
 
 // ==================================================================================
-// 9. PROMOTIONS
+// 9. PROMOTIONS (Synced from backend)
 // ==================================================================================
 export interface Promotion {
-  uuid: string;
+  id: number;
   name: string;
   type: string;
   start_date: ISODateString | null;
@@ -147,7 +147,7 @@ export interface Promotion {
 }
 
 // ==================================================================================
-// 10. SALES
+// 10. SALES (POS Generated)
 // ==================================================================================
 export type SaleStatus = 'COMPLETED' | 'CANCELLED';
 export type SaleDocType = 'FV' | 'FR' | string; // Factura Venta, Rectificativa etc.
@@ -173,8 +173,8 @@ export interface Sale {
   
   // Contexto
   shift_uuid: string | null;
-  customer_uuid: string | null;
-  user_uuid: string;
+  customer_id: number | null;
+  user_id: number;
   
   // Totales
   total_net: number;
@@ -207,25 +207,25 @@ export interface FiscalRecord {
 }
 
 // ==================================================================================
-// 12. SALE LINES
+// 12. SALE LINES (POS Generated)
 // ==================================================================================
 export interface SaleLine {
   uuid: string;
   sale_uuid: string;
-  product_uuid: string | null;
+  product_id: number | null;
   product_name: string;
   
   quantity: number;
   unit_price: number;
   
   // Snapshot Fiscal
-  tax_uuid: string | null;
+  tax_id: number | null;
   tax_rate: number;
   tax_amount: number;
   
   discount_percent: number;
   discount_amount: number;
-  promotion_uuid: string | null;
+  promotion_id: number | null;
   
   total_line: number;
   
@@ -233,11 +233,11 @@ export interface SaleLine {
 }
 
 // ==================================================================================
-// 13. SALE TAX SUMMARY
+// 13. SALE TAX SUMMARY (POS Generated)
 // ==================================================================================
 export interface SaleTaxSummary {
   sale_uuid: string;
-  tax_uuid: string | null;
+  tax_id: number | null;
   tax_name_snapshot: string;
   tax_rate_snapshot: number;
   base_amount: number;

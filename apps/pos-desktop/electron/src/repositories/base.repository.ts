@@ -18,7 +18,7 @@ export abstract class SqliteBaseRepository<T> implements IBaseRepository<T> {
     return stmt.all() as T[];
   }
 
-  async findById(id: string): Promise<T | null> {
+  async findById(id: string | number): Promise<T | null> {
     const stmt = this.getDb().prepare(`SELECT * FROM ${this.tableName} WHERE ${this.primaryKey} = ?`);
     const result = stmt.get(id);
     return (result as T) || null;
@@ -34,7 +34,7 @@ export abstract class SqliteBaseRepository<T> implements IBaseRepository<T> {
     stmt.run(...values);
   }
 
-  async update(id: string, data: Partial<T>): Promise<void> {
+  async update(id: string | number, data: Partial<T>): Promise<void> {
     const keys = Object.keys(data);
     if (keys.length === 0) return;
 
@@ -45,7 +45,7 @@ export abstract class SqliteBaseRepository<T> implements IBaseRepository<T> {
     stmt.run(...values);
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string | number): Promise<void> {
     const stmt = this.getDb().prepare(`DELETE FROM ${this.tableName} WHERE ${this.primaryKey} = ?`);
     stmt.run(id);
   }

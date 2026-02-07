@@ -3,7 +3,7 @@ import { SqliteBaseRepository } from './base.repository';
 
 export class SqliteCustomerRepository extends SqliteBaseRepository<Customer> implements ICustomerRepository {
   protected tableName = 'customers';
-  protected primaryKey = 'uuid';
+  protected primaryKey = 'id';
 
   async search(query: string): Promise<Customer[]> {
     const likeQuery = `%${query}%`;
@@ -21,8 +21,8 @@ export class SqliteCustomerRepository extends SqliteBaseRepository<Customer> imp
     return stmt.all() as Customer[];
   }
 
-  async delete(id: string): Promise<void> {
-    const stmt = this.getDb().prepare('UPDATE customers SET deleted_at = CURRENT_TIMESTAMP, active = 0 WHERE uuid = ?');
+  async delete(id: string | number): Promise<void> {
+    const stmt = this.getDb().prepare('UPDATE customers SET deleted_at = CURRENT_TIMESTAMP, active = 0 WHERE id = ?');
     stmt.run(id);
   }
 }

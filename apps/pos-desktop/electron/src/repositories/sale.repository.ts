@@ -95,8 +95,8 @@ export class SqliteSaleTaxSummaryRepository implements ISaleTaxSummaryRepository
   async replaceForSale(saleId: string, summaries: SaleTaxSummary[]): Promise<void> {
     const deleteStmt = this.getDb().prepare('DELETE FROM sale_tax_summary WHERE sale_uuid = ?');
     const insertStmt = this.getDb().prepare(`
-      INSERT INTO sale_tax_summary (sale_uuid, tax_uuid, tax_name_snapshot, tax_rate_snapshot, base_amount, tax_amount)
-      VALUES (@sale_uuid, @tax_uuid, @tax_name_snapshot, @tax_rate_snapshot, @base_amount, @tax_amount)
+      INSERT INTO sale_tax_summary (sale_uuid, tax_id, tax_name_snapshot, tax_rate_snapshot, base_amount, tax_amount)
+      VALUES (@sale_uuid, @tax_id, @tax_name_snapshot, @tax_rate_snapshot, @base_amount, @tax_amount)
     `);
 
     const run = this.getDb().transaction(() => {

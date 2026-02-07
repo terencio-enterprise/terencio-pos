@@ -9,7 +9,7 @@ import { SqliteBaseRepository } from './base.repository';
 
 export class SqliteProductRepository extends SqliteBaseRepository<Product> implements IProductRepository {
   protected tableName = 'products';
-  protected primaryKey = 'uuid';
+  protected primaryKey = 'id';
 
   async findByBarcode(barcode: string): Promise<Product | null> {
     const stmt = this.getDb().prepare('SELECT * FROM products WHERE barcode = ?');
@@ -36,8 +36,8 @@ export class SqliteProductRepository extends SqliteBaseRepository<Product> imple
     return stmt.all() as Product[];
   }
 
-  async delete(id: string): Promise<void> {
-    const stmt = this.getDb().prepare('UPDATE products SET deleted_at = CURRENT_TIMESTAMP, active = 0 WHERE uuid = ?');
+  async delete(id: string | number): Promise<void> {
+    const stmt = this.getDb().prepare('UPDATE products SET deleted_at = CURRENT_TIMESTAMP, active = 0 WHERE id = ?');
     stmt.run(id);
   }
 }
@@ -48,26 +48,26 @@ export class SqliteProductPriceRepository implements IProductPriceRepository {
     return db;
   }
 
-  async findByProduct(productUuid: string): Promise<ProductPrice[]> {
-    const stmt = this.getDb().prepare('SELECT * FROM product_prices WHERE product_uuid = ?');
-    return stmt.all(productUuid) as ProductPrice[];
+  async findByProduct(productId: number): Promise<ProductPrice[]> {
+    const stmt = this.getDb().prepare('SELECT * FROM product_prices WHERE product_id = ?');
+    return stmt.all(productId) as ProductPrice[];
   }
 
-  async findByTariff(tariffUuid: string): Promise<ProductPrice[]> {
-    const stmt = this.getDb().prepare('SELECT * FROM product_prices WHERE tariff_uuid = ?');
-    return stmt.all(tariffUuid) as ProductPrice[];
+  async findByTariff(tariffId: number): Promise<ProductPrice[]> {
+    const stmt = this.getDb().prepare('SELECT * FROM product_prices WHERE tariff_id = ?');
+    return stmt.all(tariffId) as ProductPrice[];
   }
 
-  async getPrice(productUuid: string, tariffUuid: string): Promise<ProductPrice | null> {
-    const stmt = this.getDb().prepare('SELECT * FROM product_prices WHERE product_uuid = ? AND tariff_uuid = ?');
-    return (stmt.get(productUuid, tariffUuid) as ProductPrice) || null;
+  async getPrice(productId: number, tariffId: number): Promise<ProductPrice | null> {
+    const stmt = this.getDb().prepare('SELECT * FROM product_prices WHERE product_id = ? AND tariff_id = ?');
+    return (stmt.get(productId, tariffId) as ProductPrice) || null;
   }
 
   async setPrice(price: ProductPrice): Promise<void> {
     const stmt = this.getDb().prepare(`
-      INSERT INTO product_prices (product_uuid, tariff_uuid, price, updated_at) 
-      VALUES (@product_uuid, @tariff_uuid, @price, CURRENT_TIMESTAMP)
-      ON CONFLICT(product_uuid, tariff_uuid) DO UPDATE SET
+      INSERT INTO product_prices (product_id, tariff_id, price, updated_at) 
+      VALUES (@product_id, @tariff_id, @price, CURRENT_TIMESTAMP)
+      ON CONFLICT(product_id, tariff_id) DO UPDATE SET
       price = excluded.price,
       updated_at = CURRENT_TIMESTAMP
     `);

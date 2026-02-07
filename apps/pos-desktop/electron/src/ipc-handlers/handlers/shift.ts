@@ -10,7 +10,7 @@ export function registerShiftHandlers(context: IpcContext) {
       }
 
       const shift = await context.shiftRepo.startShift(
-        currentUser.uuid,
+        currentUser.id,
         context.getCurrentDeviceId(),
         startingCash
       );
@@ -29,7 +29,7 @@ export function registerShiftHandlers(context: IpcContext) {
         throw new Error('No user logged in');
       }
 
-      const openShift = await context.shiftRepo.findOpenShiftByUserId(currentUser.uuid);
+      const openShift = await context.shiftRepo.findOpenShiftByUserId(currentUser.id);
 
       if (!openShift) {
         throw new Error('No open shift found');
@@ -50,7 +50,7 @@ export function registerShiftHandlers(context: IpcContext) {
         return null;
       }
 
-      const shift = await context.shiftRepo.findOpenShiftByUserId(currentUser.uuid);
+      const shift = await context.shiftRepo.findOpenShiftByUserId(currentUser.id);
       return shift;
     } catch (error) {
       console.error('Error getting current shift:', error);
@@ -65,7 +65,7 @@ export function registerShiftHandlers(context: IpcContext) {
         throw new Error('No user logged in');
       }
 
-      const shifts = await context.shiftRepo.findAllByUserId(currentUser.uuid);
+      const shifts = await context.shiftRepo.findAllByUserId(currentUser.id);
       return shifts;
     } catch (error) {
       console.error('Error getting shift history:', error);
