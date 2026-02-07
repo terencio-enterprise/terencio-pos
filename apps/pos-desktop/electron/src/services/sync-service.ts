@@ -1,4 +1,5 @@
 import { POSRegistrationResponse, User } from '@terencio/domain';
+import * as bcrypt from 'bcryptjs';
 import { db } from '../db/db';
 import { ApiClient } from './api-client';
 
@@ -28,6 +29,11 @@ export class SyncService {
       });
       */
 
+      
+  const saltRounds = 10;
+  const defaultPin = '123456';
+  const pinHash = await bcrypt.hash(defaultPin, saltRounds);
+
       // TODO: REMOVE MOCK DATA ONCE API IS CONNECTED
       // Mock delay to simulate network request
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -45,7 +51,7 @@ export class SyncService {
             full_name: 'Admin User',
             role: 'admin',
             // bcrypt hash for "123456"
-            pin_hash: '$2a$10$NotRealHashButShouldWorkForMockIfAuthIsMocked', 
+            pin_hash: pinHash,
             is_active: 1,
             deleted_at: null,
             created_at: new Date().toISOString(),

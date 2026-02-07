@@ -90,9 +90,9 @@ export const SyncWizardPage: React.FC = () => {
           <div 
             key={s} 
             className={`h-1.5 rounded-full transition-all duration-500 ${
-              s < currentIdx ? 'w-3 bg-primary/40' : 
-              s === currentIdx ? 'w-8 bg-primary' : 
-              'w-2 bg-muted-foreground/20'
+              s < currentIdx ? 'w-3 bg-[var(--primary)]/40' : 
+              s === currentIdx ? 'w-8 bg-[var(--primary)]' : 
+              'w-2 bg-[var(--muted-foreground)]/20'
             }`}
           />
         ))}
@@ -101,9 +101,9 @@ export const SyncWizardPage: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4 relative overflow-hidden font-sans">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-4 relative overflow-hidden font-sans">
       {/* Background Ambience matched to LoginPage */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[var(--primary)]/10 via-[var(--background)] to-[var(--background)] pointer-events-none" />
       
       {/* Language Switcher */}
       <div className="absolute top-6 right-6 z-50">
@@ -111,7 +111,7 @@ export const SyncWizardPage: React.FC = () => {
           variant="ghost" 
           size="sm" 
           onClick={toggleLanguage} 
-          className="gap-2 text-muted-foreground hover:text-foreground hover:bg-primary/5"
+          className="gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--primary)]/5"
         >
           <Globe className="h-4 w-4" />
           <span className="uppercase text-xs font-semibold">{language}</span>
@@ -122,11 +122,11 @@ export const SyncWizardPage: React.FC = () => {
         
         {/* Header - Always visible but adapts */}
         <div className={`text-center transition-all duration-500 ${step === 'welcome' ? 'mb-4' : 'mb-0'}`}>
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4 border border-primary/20 shadow-sm">
-            <Store className="h-7 w-7 text-primary" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[var(--primary)]/10 mb-4 border border-[var(--primary)]/20 shadow-sm">
+            <Store className="h-7 w-7 text-[var(--primary)]" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Terencio POS</h1>
-          <p className="text-muted-foreground text-sm font-medium mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">Terencio POS</h1>
+          <p className="text-[var(--muted-foreground)] text-sm font-medium mt-1">
             {step === 'welcome' ? t('welcome.subtitle') : t('login.subtitle')}
           </p>
         </div>
@@ -140,8 +140,8 @@ export const SyncWizardPage: React.FC = () => {
           {step === 'welcome' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8 text-center">
               <div className="space-y-4">
-                <h2 className="text-3xl font-bold tracking-tight text-foreground">{t('welcome.title')}</h2>
-                <p className="text-muted-foreground text-lg leading-relaxed max-w-sm mx-auto">
+                <h2 className="text-3xl font-bold tracking-tight text-[var(--foreground)]">{t('welcome.title')}</h2>
+                <p className="text-[var(--muted-foreground)] text-lg leading-relaxed max-w-sm mx-auto">
                   {t('welcome.description')}
                 </p>
               </div>
@@ -150,16 +150,11 @@ export const SyncWizardPage: React.FC = () => {
                 <Button 
                   size="lg" 
                   onClick={() => setStep('input')} 
-                  className="w-full h-14 text-lg font-medium rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
+                  className="w-full h-14 text-lg font-bold rounded-xl shadow-xl shadow-foreground/10 hover:shadow-foreground/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-background hover:bg-foreground/90 bg-[var(--primary)] text-[var(--background)] cursor-pointer flex items-center justify-center"
                 >
                   {t('welcome.startButton')}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                
-                {/* Optional Exit Button if needed */}
-                {/* <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                  {t('welcome.exit')}
-                </Button> */}
               </div>
             </div>
           )}
@@ -181,7 +176,7 @@ export const SyncWizardPage: React.FC = () => {
                     onChange={handleCreateCode}
                     onKeyPress={handleKeyPress}
                     placeholder={t('code.placeholder')}
-                    className="pl-12 h-16 text-3xl font-mono tracking-[0.5em] uppercase bg-transparent border-0 border-b-2 rounded-none border-input focus-visible:ring-0 focus-visible:border-primary transition-all placeholder:text-muted-foreground/30 text-foreground font-bold text-center"
+                    className="pl-12 h-16 text-3xl font-mono tracking-[0.5em] uppercase bg-transparent border-0 border-b-2 rounded-none border-input focus-visible:ring-0 focus-visible:border-primary transition-all placeholder:text-[var(--muted-foreground)]/30 text-foreground font-bold text-center"
                     maxLength={6}
                     autoComplete="off"
                     disabled={isLoading}
@@ -189,18 +184,23 @@ export const SyncWizardPage: React.FC = () => {
                   />
                 </div>
                 
-                <div className="text-center text-xs text-muted-foreground/70 uppercase tracking-widest font-medium">
+                <div className="text-center text-xs text-[var(--muted-foreground)]/70 uppercase tracking-widest font-medium">
                   {t('code.description')}
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4 pt-4">
-                <Button variant="ghost" size="lg" className="h-14 rounded-xl" onClick={() => setStep('welcome')}>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="h-14 rounded-xl border-2 border-[var(--muted-foreground)] hover:border-[var(--primary)]/50 hover:bg-[var(--primary)]/5 text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-all font-medium bg-transparent"
+                  onClick={() => setStep('welcome')}
+                >
                   {t('code.back')}
                 </Button>
                 <Button 
                   size="lg" 
-                  className="col-span-2 h-14 text-lg rounded-xl shadow-md" 
+                  className="col-span-2 h-14 text-lg font-bold rounded-xl shadow-lg shadow-foreground/10 hover:shadow-foreground/20 hover:-translate-y-0.5 transition-all bg-primary text-background hover:bg-foreground/90 bg-[var(--primary)] text-[var(--background)] cursor-pointer flex items-center justify-center" 
                   onClick={validateCode}
                   disabled={code.length !== 6 || isLoading}
                 >
@@ -214,14 +214,14 @@ export const SyncWizardPage: React.FC = () => {
           {step === 'syncing' && (
             <div className="animate-in fade-in zoom-in-95 duration-300 flex flex-col items-center justify-center py-12 space-y-6">
               <div className="relative">
-                <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <div className="w-20 h-20 border-4 border-[var(--primary)]/20 border-t-[var(--primary)] rounded-full animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Laptop className="h-8 w-8 text-primary/60 animate-pulse" />
+                  <Laptop className="h-8 w-8 text-[var(--primary)]/60 animate-pulse" />
                 </div>
               </div>
               <div className="space-y-2 text-center">
-                <h3 className="text-xl font-semibold text-foreground">{t(loadingStatus || 'loading.validating')}</h3>
-                <p className="text-sm text-muted-foreground">Connecting to secure server...</p>
+                <h3 className="text-xl font-semibold text-[var(--foreground)]">{t(loadingStatus || 'loading.validating')}</h3>
+                <p className="text-sm text-[var(--muted-foreground)]">Connecting to secure server...</p>
               </div>
             </div>
           )}
@@ -258,18 +258,27 @@ export const SyncWizardPage: React.FC = () => {
                     <Monitor className="h-6 w-6 text-primary" />
                   </div>
                   <div className="space-y-1 flex-1">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('preview.posName')}</p>
-                    <p className="font-bold text-xl text-foreground">{posConfig.pos_name}</p>
-                    <Badge variant="outline" className="mt-1 font-mono text-xs bg-background/50">{posConfig.device_id}</Badge>
+                    <p className="text-xs font-bold text-[var(--muted-foreground)] uppercase tracking-wider">{t('preview.posName')}</p>
+                    <p className="font-bold text-xl text-[var(--foreground)]">{posConfig.pos_name}</p>
+                    <Badge variant="outline" className="mt-1 font-mono text-xs bg-[var(--background)]/50">{posConfig.device_id}</Badge>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4 pt-2">
-                <Button variant="ghost" size="lg" className="h-14 rounded-xl" onClick={() => setStep('input')}>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="h-14 rounded-xl border-2 border-muted hover:border-primary/50 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-all font-medium" 
+                  onClick={() => setStep('input')}
+                >
                   {t('preview.back')}
                 </Button>
-                <Button size="lg" onClick={confirmRegistration} className="col-span-2 h-14 text-lg rounded-xl shadow-md">
+                <Button 
+                  size="lg" 
+                  onClick={confirmRegistration} 
+                  className="col-span-2 h-14 text-lg font-bold rounded-xl shadow-lg shadow-foreground/10 hover:shadow-foreground/20 hover:-translate-y-0.5 transition-all bg-foreground text-background hover:bg-foreground/90 bg-[var(--foreground)] text-[var(--background)] cursor-pointer flex items-center justify-center"
+                >
                   {t('preview.confirm')} <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
@@ -295,7 +304,12 @@ export const SyncWizardPage: React.FC = () => {
               </div>
 
               <div className="space-y-3 pt-4 max-w-xs mx-auto">
-                <Button size="lg" className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/20" onClick={() => navigate('/login')}>
+                <Button 
+                  size="lg" 
+                  className="w-full h-14 text-lg font-bold rounded-xl shadow-xl shadow-foreground/10 hover:shadow-foreground/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-foreground text-background hover:bg-foreground/90
+                     bg-[var(--foreground)] text-[var(--background)] cursor-pointer flex items-center justify-center"
+                  onClick={() => navigate('/login')}
+                >
                   {t('completion.launch')}
                 </Button>
                 <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => navigate('/settings')}>
