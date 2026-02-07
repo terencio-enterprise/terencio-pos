@@ -28,7 +28,7 @@ export const SyncWizardPage: React.FC = () => {
     code, 
     error, 
     registrationData,
-    posConfig, 
+    registrationResult, 
     isLoading, 
     loadingStatus, 
     setStep, 
@@ -248,7 +248,7 @@ export const SyncWizardPage: React.FC = () => {
                   <div className="space-y-1 flex-1">
                     <p className="text-xs font-bold text-[var(--muted-foreground)] uppercase tracking-wider">{t('preview.posName')}</p>
                     <p className="font-bold text-xl text-[var(--foreground)]">{registrationData.posName}</p>
-                    <Badge variant="outline" className="mt-1 font-mono text-xs bg-[var(--background)]/50">{registrationData.deviceId}</Badge>
+                    <Badge variant="outline" className="mt-1 font-mono text-xs bg-[var(--background)]/50">{registrationData.posId}</Badge>
                   </div>
                 </div>
 
@@ -289,7 +289,7 @@ export const SyncWizardPage: React.FC = () => {
             </div>
           )}
 
-          {step === 'success' && posConfig && (
+          {step === 'success' && registrationResult && (
             <div className="animate-in fade-in zoom-in-95 duration-500 py-6 text-center space-y-8">
               <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto ring-4 ring-green-500/5">
                 <CheckCircle2 className="h-12 w-12 text-green-600" />
@@ -302,7 +302,7 @@ export const SyncWizardPage: React.FC = () => {
 
               <div className="py-2">
                 <Badge variant="secondary" className="px-4 py-2 text-base font-normal bg-secondary/40 text-foreground border-0">
-                  {t('completion.summary')} <span className="font-bold ml-1.5">{posConfig.store_name}</span>
+                  {t('completion.summary')} <span className="font-bold ml-1.5">{registrationResult.storeName}</span>
                 </Badge>
               </div>
 

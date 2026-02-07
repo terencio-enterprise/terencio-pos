@@ -5,7 +5,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   sync: {
     checkStatus: () => ipcRenderer.invoke('sync:checkStatus'),
     preview: (code: string) => ipcRenderer.invoke('sync:preview', code),
-    confirm: (registrationData: PosRegistrationPreviewDto, code: string) => ipcRenderer.invoke('sync:confirm', registrationData, code),
+    confirm: (code: string, registrationData: PosRegistrationPreviewDto) => ipcRenderer.invoke('sync:confirm', code, registrationData),
     getConfig: () => ipcRenderer.invoke('sync:getConfig')
   },
   auth: {

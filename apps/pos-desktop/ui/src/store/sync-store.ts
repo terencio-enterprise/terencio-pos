@@ -1,127 +1,104 @@
-import { POSConfiguration, POSRegistrationResponse } from '@terencio/domain';
+import { PosRegistrationPreviewDto, PosRegistrationResultDto } from '@terencio/domain';
 import { create } from 'zustand';
 
 export type SyncStep = 'welcome' | 'input' | 'syncing' | 'preview' | 'success' | 'error';
 
 interface SyncState {
-  // State
   step: SyncStep;
   code: string;
   error: string | null;
-  registrationData: POSRegistrationResponse | null;
-  posConfig: POSConfiguration | null;
+  registrationData: PosRegistrationPreviewDto | null;
+  registrationResult: PosRegistrationResultDto | null;
   isLoading: boolean;
-  loadingStatus: string;
+  loadingStatus: string | null;
 
-  // Actions
   setStep: (step: SyncStep) => void;
   setCode: (code: string) => void;
-  setError: (error: string | null) => void;
-  clearError: () => void;
+  
   validateCode: () => Promise<void>;
   confirmRegistration: () => Promise<void>;
   checkSyncStatus: () => Promise<boolean>;
+  clearError: () => void;
   reset: () => void;
 }
 
 export const useSyncStore = create<SyncState>((set, get) => ({
-  // Initial state
   step: 'welcome',
   code: '',
   error: null,
   registrationData: null,
-  posConfig: null,
+  registrationResult: null,
   isLoading: false,
-  loadingStatus: 'loading.validating',
+  loadingStatus: null,
 
-  // Actions
   setStep: (step) => set({ step }),
-  
-  setCode: (code) => set({ code: code.toUpperCase().slice(0, 6) }),
-  
-  setError: (error) => set({ error, step: 'error' }),
-  
-  clearError: () => set({ error: null }),
+  setCode: (code) => set({ code }),
 
   validateCode: async () => {
     const { code } = get();
-    
-    if (!code || code.length !== 6) {
-      set({ error: 'Please enter a valid 6-letter code', step: 'error' });
-      return;
-    }
+    if (!code || code.length !== 6) return;
 
-    set({ isLoading: true, step: 'syncing', error: null, loadingStatus: 'loading.validating' });
-
+    set({ isLoading: true, error: null, step: 'syncing', loadingStatus: 'loading.validating' });
     try {
-      set({ loadingStatus: 'loading.fetching' });
-      
-      // Call backend to get registration preview data
-      const registrationData = await window.electronAPI.sync.preview(code);
-
+      // Call Electron Bridge - sync:preview calls backend and returns preview data
+      const data = await window.electronAPI.sync.preview(code);
       set({ 
-        registrationData,
-        step: 'preview',
-        isLoading: false 
+        registrationData: data, 
+        step: 'preview', 
+        isLoading: false,
+        loadingStatus: null
       });
-    } catch (error: any) {
-      console.error('Validation failed:', error);
+    } catch (err: any) {
       set({ 
-        error: error.message || 'Failed to validate code',
-        step: 'error',
-        isLoading: false 
+        error: err.message || 'Failed to verify code', 
+        step: 'error', 
+        isLoading: false,
+        loadingStatus: null
       });
     }
   },
 
   confirmRegistration: async () => {
     const { code, registrationData } = get();
-    
-    if (!registrationData) {
-      set({ error: 'No registration data available', step: 'error' });
-      return;
-    }
+    if (!registrationData) return;
 
-    set({ isLoading: true, step: 'syncing', error: null, loadingStatus: 'loading.registering' });
-
+    set({ isLoading: true, error: null, step: 'syncing', loadingStatus: 'loading.confirming' });
     try {
-      // Save the configuration with the backend
-      const config = await window.electronAPI.sync.confirm(registrationData, code);
-      
-      set({ loadingStatus: 'loading.finalizing' });
-      await new Promise(resolve => setTimeout(resolve, 500)); // Smooth transition
-
+      // Call Electron Bridge with Code AND Preview Data (to save users)
+      const result = await window.electronAPI.sync.confirm(code, registrationData);
       set({ 
-        posConfig: config,
-        step: 'success',
-        isLoading: false 
+        registrationResult: result,
+        step: 'success', 
+        isLoading: false,
+        loadingStatus: null
       });
-    } catch (error: any) {
-      console.error('Registration failed:', error);
+    } catch (err: any) {
       set({ 
-        error: error.message || 'Failed to register POS. Please try again.',
-        step: 'error',
-        isLoading: false 
+        error: err.message || 'Registration failed', 
+        step: 'error', 
+        isLoading: false,
+        loadingStatus: null
       });
     }
   },
 
   checkSyncStatus: async () => {
     try {
-      const isRegistered = await window.electronAPI.sync.checkStatus() as boolean;
-      return isRegistered;
-    } catch (error) {
-      console.error('Failed to check sync status:', error);
+      return await window.electronAPI.sync.checkStatus();
+    } catch {
       return false;
     }
   },
+
+  clearError: () => set({ error: null }),
 
   reset: () => set({ 
     step: 'welcome', 
     code: '', 
     error: null, 
     registrationData: null,
-    posConfig: null, 
-    isLoading: false 
-  }),
+    registrationResult: null, 
+    isLoading: false,
+    loadingStatus: null
+  })
 }));

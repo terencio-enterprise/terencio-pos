@@ -11,7 +11,7 @@ export interface ElectronAPI {
   sync: {
     checkStatus: () => Promise<boolean>;
     preview: (code: string) => Promise<PosRegistrationPreviewDto>;
-    confirm: (registrationData: PosRegistrationPreviewDto, code: string) => Promise<POSConfiguration>;
+    confirm: (code: string, registrationData: PosRegistrationPreviewDto) => Promise<PosRegistrationResultDto>;
     getConfig: () => Promise<POSConfiguration | null>;
   };
   auth: {

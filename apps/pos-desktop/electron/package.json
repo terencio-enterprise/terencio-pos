@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^9.4.0",
+    "node-machine-id": "^1.1.12",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

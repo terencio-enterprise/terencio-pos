@@ -1,155 +1,96 @@
-import { PosRegistrationPreviewDto, User, UserDto } from '@terencio/domain';
-import * as bcrypt from 'bcryptjs';
+import {
+    PosRegistrationPreviewDto,
+    PosRegistrationResultDto,
+    UserDto
+} from '@terencio/domain';
 import { db } from '../db/db';
 import { ApiClient } from './api-client';
 
-/**
- * Service for POS synchronization with backend
- */
 export class SyncService {
-  private apiClient: ApiClient;
+  private apiClient = new ApiClient();
 
-  constructor() {
-    this.apiClient = new ApiClient();
+  /**
+   * Step 1: Preview
+   * Calls backend to validate code and get store/user info.
+   */
+  async previewRegistration(code: string, deviceId: string): Promise<PosRegistrationPreviewDto> {
+    console.log(`🔄 SyncService: Previewing code ${code} for device ${deviceId}`);
+    return await this.apiClient.post<PosRegistrationPreviewDto>(
+      '/api/v1/pos/registration/preview',
+      { code, deviceId }
+    );
   }
 
   /**
-   * Preview registration data without saving (for confirmation screen)
+   * Step 2: Confirm
+   * Calls backend to register device, then saves Config and Users locally.
    */
-  async previewRegistration(code: string): Promise<PosRegistrationPreviewDto> {
-    if (!code || code.length !== 6) {
-      throw new Error('Registration code must be exactly 6 characters');
+  async confirmRegistration(
+    code: string, 
+    hardwareId: string, 
+    previewData: PosRegistrationPreviewDto
+  ): Promise<PosRegistrationResultDto> {
+    console.log(`🔄 SyncService: Confirming registration...`);
+
+    // 1. Call Backend to Confirm
+    const result = await this.apiClient.post<PosRegistrationResultDto>(
+      '/api/v1/pos/registration/confirm',
+      { code, hardwareId }
+    );
+
+    // 2. Save POS Config to SQLite
+    this.savePosConfig(result, hardwareId);
+
+    // 3. Save Users to SQLite (Data comes from the Preview step)
+    if (previewData.users && previewData.users.length > 0) {
+      this.saveUsers(previewData.users);
     }
 
-    try {
-      // TODO: CHECK API CALL LATER - UNCOMMENT REAL API INTEGRATION WHEN BACKEND IS READY
-      /*
-      const response = await this.apiClient.post<POSRegistrationResponse>('/api/v1/pos/preview', {
-        registrationCode: code.toUpperCase(),
-      });
-      */
+    return result;
+  }
 
-      const saltRounds = 10;
-      const defaultPin = '123456';
-      const pinHash = await bcrypt.hash(defaultPin, saltRounds);
+  private savePosConfig(data: PosRegistrationResultDto, hardwareId: string) {
+    const stmt = db!.prepare(`
+      INSERT OR REPLACE INTO pos_config (
+        id, pos_uuid, pos_serial_code, store_id, license_key, verifactu_enabled, is_active, updated_at
+      ) VALUES (
+        1, @pos_uuid, @pos_serial_code, @store_id, @license_key, 1, 1, CURRENT_TIMESTAMP
+      )
+    `);
 
-      // TODO: REMOVE MOCK DATA ONCE API IS CONNECTED
-      // Mock delay to simulate network request
-      await new Promise(resolve => setTimeout(resolve, 1200));
+    stmt.run({
+      pos_uuid: hardwareId,
+      pos_serial_code: data.serialCode,
+      store_id: data.storeId,
+      license_key: data.licenseKey
+    });
+    console.log('✅ Local Config Saved');
+  }
 
-      const response: PosRegistrationPreviewDto = {
-        posId: `pos-${code.toLowerCase()}`,
-        posName: `Terminal ${code.substring(0, 3)}`,
-        storeId: `store-${code.substring(3)}`,
-        storeName: 'Main Store Location',
-        users: [
-          {
-            id: 1,
-            uuid: `uuid-admin-${code}`,
-            username: 'admin',
-            fullName: 'Administrator',
-            role: 'ADMIN',
-            pinHash: pinHash,
-            isActive: 1,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 2,
-            uuid: `uuid-cashier-${code}`,
-            username: 'cashier',
-            fullName: 'Cashier User',
-            role: 'CASHIER',
-            pinHash: pinHash,
-            isActive: 1,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ]
-      };
+  private saveUsers(users: UserDto[]) {
+    const stmt = db!.prepare(`
+      INSERT OR REPLACE INTO users (
+        id, uuid, username, pin_hash, full_name, role, is_active, created_at
+      ) VALUES (
+        @id, @uuid, @username, @pin_hash, @full_name, @role, @is_active, CURRENT_TIMESTAMP
+      )
+    `);
 
-      // Validate response
-      if (!response.posId || !response.storeName || !response.users) {
-        throw new Error('Invalid response from server');
+    const transaction = db!.transaction((userList: UserDto[]) => {
+      for (const u of userList) {
+        stmt.run({
+          id: u.id,
+          uuid: u.uuid,
+          username: u.username,
+          pin_hash: u.pinHash, // Ensure backend sends BCrypt hash
+          full_name: u.fullName,
+          role: u.role,
+          is_active: u.isActive ? 1 : 0
+        });
       }
+    });
 
-      console.log('✅ Preview data fetched:', response.posName);
-      return response;
-    } catch (error: any) {
-      console.error('❌ Preview fetch failed:', error);
-      throw new Error(error.message || 'Failed to fetch registration preview');
-    }
-  }
-
-  /**
-   * Register POS and save configuration (call after preview confirmation)
-   */
-  async registerPOS(registrationData: PosRegistrationPreviewDto, code: string): Promise<void> {
-    try {
-      // Save users to local database - map UserDto to User
-      const users: User[] = registrationData.users.map((dto: UserDto) => ({
-        id: dto.id,
-        uuid: dto.uuid,
-        username: dto.username,
-        pin_hash: dto.pinHash,
-        full_name: dto.fullName,
-        role: dto.role,
-        permissions_json: null,
-        is_active: dto.isActive,
-        created_at: dto.createdAt,
-        updated_at: dto.updatedAt
-      }));
-      await this.saveUsers(users);
-
-      console.log('✅ POS registered successfully:', registrationData.posName);
-    } catch (error: any) {
-      console.error('❌ POS registration failed:', error);
-      throw new Error(error.message || 'Failed to register POS');
-    }
-  }
-
-  /**
-   * Save users from backend to local database
-   */
-  private async saveUsers(users: User[]): Promise<void> {
-    if (!db) {
-      throw new Error('Database not initialized');
-    }
-
-    try {
-      const insertStmt = db.prepare(`
-        INSERT OR REPLACE INTO users (id, username, pin_hash, full_name, role, is_active, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      const transaction = db.transaction((users: User[]) => {
-        for (const user of users) {
-          insertStmt.run(
-            user.id,
-            user.username,
-            user.pin_hash,
-            user.full_name,
-            user.role,
-            user.is_active ?? 1,
-            user.created_at || new Date().toISOString(),
-            user.updated_at || new Date().toISOString()
-          );
-        }
-      });
-
-      transaction(users);
-      console.log(`✅ Saved ${users.length} users to local database`);
-    } catch (error) {
-      console.error('❌ Failed to save users:', error);
-      throw new Error('Failed to save users to local database');
-    }
-  }
-
-  /**
-   * Sync data from backend (for future use)
-   */
-  async syncData(): Promise<void> {
-    // TODO: Implement periodic sync for products, customers, etc.
-    console.log('🔄 Data sync not yet implemented');
+    transaction(users);
+    console.log(`✅ Saved ${users.length} users locally`);
   }
 }
