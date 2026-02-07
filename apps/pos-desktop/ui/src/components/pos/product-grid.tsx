@@ -5,7 +5,7 @@ import { formatCurrency } from '@/lib/utils'
 import { useTransactionStore } from '@/store/transaction-store'
 import { Product } from '@/types'
 import { Search } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 // Mock products for demonstration
 const mockProducts: Product[] = [
@@ -19,9 +19,19 @@ const mockProducts: Product[] = [
   { id: '8', name: 'Cookies', price: 279, sku: 'SNK-003', category: 'Snacks', stock: 55 },
 ]
 
-export const ProductGrid: React.FC = () => {
+interface ProductGridProps {
+  searchInputRef?: React.RefObject<HTMLInputElement>
+}
+
+export const ProductGrid: React.FC<ProductGridProps> = ({ searchInputRef }) => {
   const [search, setSearch] = useState('')
+  const [selectedProductIndex, setSelectedProductIndex] = useState(0)
   const { addItem } = useTransactionStore()
+  const localSearchRef = useRef<HTMLInputElement>(null)
+  const productRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  // Use provided ref or local ref
+  const inputRef = searchInputRef || localSearchRef
 
   const filteredProducts = mockProducts.filter(
     (product) =>
@@ -30,25 +40,80 @@ export const ProductGrid: React.FC = () => {
       product.category.toLowerCase().includes(search.toLowerCase())
   )
 
+  // Keyboard navigation for products
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle if not typing in search
+      const target = e.target as HTMLElement
+      const isInSearch = target === inputRef.current
+
+      if (!isInSearch && filteredProducts.length > 0) {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          setSelectedProductIndex((prev) => Math.min(prev + 1, filteredProducts.length - 1))
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          setSelectedProductIndex((prev) => Math.max(prev - 1, 0))
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          const cols = 4 // Grid columns
+          setSelectedProductIndex((prev) => Math.min(prev + cols, filteredProducts.length - 1))
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          const cols = 4
+          setSelectedProductIndex((prev) => Math.max(prev - cols, 0))
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          addItem(filteredProducts[selectedProductIndex])
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [filteredProducts, selectedProductIndex, addItem, inputRef])
+
+  // Keep selected index in bounds when filtering
+  useEffect(() => {
+    if (selectedProductIndex >= filteredProducts.length) {
+      setSelectedProductIndex(Math.max(0, filteredProducts.length - 1))
+    }
+  }, [filteredProducts.length, selectedProductIndex])
+
+  // Scroll selected product into view
+  useEffect(() => {
+    if (productRefs.current[selectedProductIndex]) {
+      productRefs.current[selectedProductIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      })
+    }
+  }, [selectedProductIndex])
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search products by name, SKU, or category..."
+            ref={inputRef}
+            placeholder="Search products by name, SKU, or category... (F1 or /)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
+            autoFocus
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredProducts.map((product) => (
+        {filteredProducts.map((product, index) => (
           <Card
             key={product.id}
-            className="cursor-pointer transition-all hover:shadow-lg hover:scale-105"
+            ref={(el) => (productRefs.current[index] = el)}
+            className={`cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
+              index === selectedProductIndex ? 'ring-2 ring-primary shadow-lg' : ''
+            }`}
             onClick={() => addItem(product)}
           >
             <CardContent className="p-4">
@@ -81,6 +146,10 @@ export const ProductGrid: React.FC = () => {
           No products found
         </div>
       )}
+
+      <p className="text-xs text-center text-muted-foreground">
+        Use arrow keys to navigate, Enter to add to cart
+      </p>
     </div>
   )
 }

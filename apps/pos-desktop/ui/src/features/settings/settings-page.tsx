@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { KeyboardSettings } from '@/features/settings/keyboard-settings'
 import { useSettingsStore } from '@/store/settings-store'
 import { ArrowLeft, Save } from 'lucide-react'
 import React, { useState } from 'react'
@@ -12,14 +13,17 @@ export const SettingsPage: React.FC = () => {
   const navigate = useNavigate()
   const { settings, updateSettings, theme, updateTheme } = useSettingsStore()
   
-  const [businessName, setBusinessName] = useState(settings.business.name)
   const [primaryColor, setPrimaryColor] = useState(theme.colors.primary)
+  const [receiptHeader, setReceiptHeader] = useState(settings.receipt.header)
+  const [receiptFooter, setReceiptFooter] = useState(settings.receipt.footer)
 
   const handleSave = () => {
     updateSettings({
-      business: {
-        ...settings.business,
-        name: businessName,
+      ...settings,
+      receipt: {
+        ...settings.receipt,
+        header: receiptHeader,
+        footer: receiptFooter,
       },
     })
     
@@ -40,6 +44,7 @@ export const SettingsPage: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => navigate('/pos')}
+            title="Back to POS (ESC)"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -55,74 +60,13 @@ export const SettingsPage: React.FC = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="business" className="space-y-6">
+        <Tabs defaultValue="theme" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="business">Business</TabsTrigger>
             <TabsTrigger value="theme">Theme</TabsTrigger>
             <TabsTrigger value="receipt">Receipt</TabsTrigger>
-            <TabsTrigger value="system">System</TabsTrigger>
+            <TabsTrigger value="keyboard">Keyboard</TabsTrigger>
+            <TabsTrigger value="hardware">Hardware</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="business" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Business Information</CardTitle>
-                <CardDescription>
-                  Update your business details
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="businessName">Business Name</Label>
-                  <Input
-                    id="businessName"
-                    value={businessName}
-                    onChange={(e) => setBusinessName(e.target.value)}
-                    placeholder="Enter business name"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    defaultValue={settings.business.address}
-                    placeholder="Enter business address"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      defaultValue={settings.business.phone}
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id ="email"
-                      type="email"
-                      defaultValue={settings.business.email}
-                      placeholder="Enter email"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="taxId">Tax ID</Label>
-                  <Input
-                    id="taxId"
-                    defaultValue={settings.business.taxId}
-                    placeholder="Enter tax ID"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="theme" className="space-y-4">
             <Card>
@@ -160,7 +104,7 @@ export const SettingsPage: React.FC = () => {
               <CardHeader>
                 <CardTitle>Receipt Settings</CardTitle>
                 <CardDescription>
-                  Configure receipt appearance
+                  Configure receipt appearance (local overrides)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -168,7 +112,8 @@ export const SettingsPage: React.FC = () => {
                   <Label htmlFor="receiptHeader">Header Text</Label>
                   <Input
                     id="receiptHeader"
-                    defaultValue={settings.receipt.header}
+                    value={receiptHeader}
+                    onChange={(e) => setReceiptHeader(e.target.value)}
                     placeholder="Thank you for your purchase!"
                   />
                 </div>
@@ -177,48 +122,50 @@ export const SettingsPage: React.FC = () => {
                   <Label htmlFor="receiptFooter">Footer Text</Label>
                   <Input
                     id="receiptFooter"
-                    defaultValue={settings.receipt.footer}
+                    value={receiptFooter}
+                    onChange={(e) => setReceiptFooter(e.target.value)}
                     placeholder="Please come again"
                   />
+                </div>
+
+                <div className="rounded-lg bg-muted p-4 text-sm">
+                  <p className="font-semibold mb-2">Note:</p>
+                  <p className="text-muted-foreground">
+                    Business information, tax rates, and currency settings are managed by the core backend
+                    and will be synced automatically. Only receipt text can be customized locally.
+                  </p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="system" className="space-y-4">
+          <TabsContent value="keyboard" className="space-y-4">
+            <KeyboardSettings />
+          </TabsContent>
+
+          <TabsContent value="hardware" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>System Settings</CardTitle>
+                <CardTitle>Hardware Configuration</CardTitle>
                 <CardDescription>
-                  Configure system preferences
+                  Configure and test connected hardware devices
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Tax Rate</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      defaultValue={settings.tax.rate * 100}
-                      placeholder="10"
-                      className="w-24"
-                    />
-                    <span className="text-muted-foreground">%</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Currency</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      defaultValue={settings.currency.code}
-                      placeholder="USD"
-                    />
-                    <Input
-                      defaultValue={settings.currency.symbol}
-                      placeholder="$"
-                    />
-                  </div>
+                <div className="rounded-lg border-2 border-dashed p-8 text-center">
+                  <p className="text-muted-foreground">
+                    Hardware configuration features coming soon
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    This section will allow you to configure and test:
+                  </p>
+                  <ul className="text-sm text-muted-foreground mt-2 space-y-1">
+                    <li>• Receipt printers</li>
+                    <li>• Barcode scanners</li>
+                    <li>• Cash drawers</li>
+                    <li>• Customer displays</li>
+                    <li>• Payment terminals</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>

@@ -42,6 +42,7 @@ export const ShoppingCart: React.FC = () => {
           size="sm"
           onClick={clearCart}
           disabled={transaction.items.length === 0}
+          title="Clear Cart (F3)"
         >
           Clear
         </Button>
@@ -78,6 +79,7 @@ export const ShoppingCart: React.FC = () => {
                     size="sm"
                     onClick={() => removeItem(item.product.id)}
                     className="h-8 w-8 p-0"
+                    title="Remove item (Delete)"
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
@@ -90,6 +92,7 @@ export const ShoppingCart: React.FC = () => {
                       size="sm"
                       onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1))}
                       className="h-8 w-8 p-0"
+                      title="Decrease quantity (-)"
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
@@ -108,6 +111,7 @@ export const ShoppingCart: React.FC = () => {
                       size="sm"
                       onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                       className="h-8 w-8 p-0"
+                      title="Increase quantity (+)"
                     >
                       <Plus className="h-3 w-3" />
                     </Button>
@@ -151,10 +155,15 @@ export const ShoppingCart: React.FC = () => {
           size="lg"
           onClick={handleCheckout}
           disabled={transaction.items.length === 0}
+          title="Checkout (F12)"
         >
           <CreditCard className="mr-2 h-4 w-4" />
-          Checkout
+          Checkout (F12)
         </Button>
+
+        <p className="mt-2 text-xs text-center text-muted-foreground">
+          F3: Clear | F12: Checkout
+        </p>
       </div>
     </div>
   )

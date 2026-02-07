@@ -1,6 +1,11 @@
-import { Shift, User } from '@terencio/domain';
+import { POSConfiguration, POSRegistrationResponse, Shift, User } from '@terencio/domain';
 
 export interface ElectronAPI {
+  sync: {
+    checkStatus: () => Promise<boolean>;
+    register: (code: string) => Promise<POSRegistrationResponse>;
+    getConfig: () => Promise<POSConfiguration | null>;
+  };
   auth: {
     listUsers: () => Promise<Omit<User, 'pin_hash'>[]>;
     login: (username: string, pin: string) => Promise<Omit<User, 'pin_hash'>>;

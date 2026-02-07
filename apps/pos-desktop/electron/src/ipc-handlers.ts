@@ -1,18 +1,81 @@
-import { User } from '@terencio/domain';
+import { POSConfiguration, User } from '@terencio/domain';
 import { ipcMain } from 'electron';
+import { SqlitePOSConfigRepository } from './repositories/pos-config.repository';
 import { SqliteShiftRepository } from './repositories/shift.repository';
 import { SqliteUserRepository } from './repositories/user.repository';
+import { SyncService } from './services/sync-service';
 
 let userRepo: SqliteUserRepository;
 let shiftRepo: SqliteShiftRepository;
+let posConfigRepo: SqlitePOSConfigRepository;
+let syncService: SyncService;
 
 // Store current user session
 let currentUser: User | null = null;
-let currentDeviceId: string = 'MAIN'; // TODO: Get from system
+let currentDeviceId: string = 'UNREGISTERED'; // Will be updated from POS config
 
 export function initializeIpcHandlers() {
   userRepo = new SqliteUserRepository();
   shiftRepo = new SqliteShiftRepository();
+  posConfigRepo = new SqlitePOSConfigRepository();
+  syncService = new SyncService();
+
+  // Load device ID from POS configuration
+  loadDeviceId();
+
+  // ==================================================================================
+  // SYNC HANDLERS
+  // ==================================================================================
+
+  ipcMain.handle('sync:checkStatus', async () => {
+    try {
+      const isRegistered = await posConfigRepo.isRegistered();
+      return isRegistered;
+    } catch (error) {
+      console.error('Error checking sync status:', error);
+      return false;
+    }
+  });
+
+  ipcMain.handle('sync:register', async (_event, code: string) => {
+    try {
+      // Register with backend
+      const response = await syncService.registerPOS(code);
+
+      // Save configuration locally
+      const posConfig: POSConfiguration = {
+        pos_id: response.posId,
+        pos_name: response.posName,
+        store_id: response.storeId,
+        store_name: response.storeName,
+        device_id: response.deviceId,
+        registration_code: code,
+        registered_at: new Date().toISOString(),
+        is_active: 1,
+      };
+
+      await posConfigRepo.saveConfiguration(posConfig);
+
+      // Update current device ID
+      currentDeviceId = response.deviceId;
+
+      console.log('✅ POS registered and configured successfully');
+      return response;
+    } catch (error: any) {
+      console.error('Error during POS registration:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('sync:getConfig', async () => {
+    try {
+      const config = await posConfigRepo.getConfiguration();
+      return config;
+    } catch (error) {
+      console.error('Error getting POS config:', error);
+      return null;
+    }
+  });
 
   // ==================================================================================
   // AUTHENTICATION HANDLERS
@@ -160,4 +223,21 @@ export function initializeIpcHandlers() {
   });
 
   console.log('✅ IPC handlers initialized');
+}
+
+/**
+ * Load device ID from POS configuration
+ */
+async function loadDeviceId() {
+  try {
+    const config = await posConfigRepo.getConfiguration();
+    if (config && config.device_id) {
+      currentDeviceId = config.device_id;
+      console.log(`📱 Device ID loaded: ${currentDeviceId}`);
+    } else {
+      console.log('⚠️  No POS configuration found - device not registered');
+    }
+  } catch (error) {
+    console.error('Error loading device ID:', error);
+  }
 }

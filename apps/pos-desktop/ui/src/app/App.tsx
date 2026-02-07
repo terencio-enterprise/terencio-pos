@@ -1,30 +1,51 @@
-import { LoginPage } from '@/features/auth/login-page'
-import { ProtectedRoute } from '@/features/auth/protected-route'
+import { LoginPage } from '@/features/auth/pages/login-page'
+import { ProtectedRoute } from '@/features/auth/pages/protected-route'
 import { PosScreen } from '@/features/pos/pos-screen'
 import { SettingsPage } from '@/features/settings/settings-page'
+import { SyncCheck } from '@/features/sync/sync-check'
+import { SyncWizardPage } from '@/features/sync/sync-wizard-page'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        {/* Sync Wizard - No auth or sync check required */}
+        <Route path="/sync" element={<SyncWizardPage />} />
+        
+        {/* Login - Requires sync but not auth */}
+        <Route 
+          path="/login" 
+          element={
+            <SyncCheck>
+              <LoginPage />
+            </SyncCheck>
+          } 
+        />
+        
+        {/* Protected routes - Require both sync and auth */}
         <Route
           path="/pos"
           element={
-            <ProtectedRoute>
-              <PosScreen />
-            </ProtectedRoute>
+            <SyncCheck>
+              <ProtectedRoute>
+                <PosScreen />
+              </ProtectedRoute>
+            </SyncCheck>
           }
         />
         <Route
           path="/settings"
           element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
+            <SyncCheck>
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            </SyncCheck>
           }
         />
+        
+        {/* Default redirect to POS */}
         <Route path="/" element={<Navigate to="/pos" replace />} />
       </Routes>
     </BrowserRouter>

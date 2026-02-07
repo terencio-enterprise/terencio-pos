@@ -2,7 +2,6 @@ import Database from 'better-sqlite3';
 import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import { seedUsers } from './seed-users';
 
 // Export the specific Database type
 export let db: Database.Database | null = null;
@@ -36,9 +35,6 @@ export const initDb = async () => {
     
     // 3. Run Migrations
     runMigrations(migrationsPath);
-    
-    // 4. Seed initial data
-    await seedUsers(db);
     
   } catch (err) {
     console.error('❌ Database Initialization Error:', err);

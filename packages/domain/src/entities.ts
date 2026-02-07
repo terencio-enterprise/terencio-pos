@@ -265,3 +265,30 @@ export interface DocumentSequence {
   device_id: string;
   current_value: number;
 }
+
+// ==================================================================================
+// 16. POS CONFIGURATION
+// ==================================================================================
+export interface POSConfiguration {
+  id?: number;
+  pos_id: string;
+  pos_name: string;
+  store_id: string;
+  store_name: string;
+  device_id: string;
+  registration_code?: string;
+  registered_at: string;
+  last_sync_at?: string;
+  is_active: number; // 0 or 1
+  created_at?: string;
+}
+
+export interface POSRegistrationResponse {
+  posId: string;
+  posName: string;
+  storeId: string;
+  storeName: string;
+  deviceId: string;
+  users: User[];
+}
+
