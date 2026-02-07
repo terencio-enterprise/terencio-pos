@@ -1,6 +1,6 @@
 import { LoginPage } from '@/features/auth/pages/login-page'
 import { ProtectedRoute } from '@/features/auth/pages/protected-route'
-import { PosScreen } from '@/features/pos/pos-screen'
+import { PosScreen } from '@/features/pos/pages/pos-screen'
 import { SyncCheck } from '@/features/sync/sync-check'
 import { SyncWizardPage } from '@/features/sync/sync-wizard-page'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
