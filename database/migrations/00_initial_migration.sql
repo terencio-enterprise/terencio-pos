@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS app_settings (
     description TEXT
 );
 
--- 2. USUARIOS
+-- 2. USUARIOS (Synced from backend)
 CREATE TABLE IF NOT EXISTS users (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     pin_hash TEXT,
     full_name TEXT,
@@ -26,10 +26,10 @@ CREATE TABLE IF NOT EXISTS users (
     deleted_at TEXT
 );
 
--- 3. TURNOS (CAJA)
+-- 3. TURNOS (CAJA) - POS Generated
 CREATE TABLE IF NOT EXISTS shifts (
     uuid TEXT PRIMARY KEY,
-    user_uuid TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
     device_id TEXT,
     start_time TEXT DEFAULT CURRENT_TIMESTAMP,
     end_time TEXT,
@@ -40,12 +40,12 @@ CREATE TABLE IF NOT EXISTS shifts (
     status TEXT DEFAULT 'OPEN',
     notes TEXT,
     synced INTEGER DEFAULT 0,
-    FOREIGN KEY(user_uuid) REFERENCES users(uuid)
+    FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
--- 4. IMPUESTOS
+-- 4. IMPUESTOS (Synced from backend)
 CREATE TABLE IF NOT EXISTS taxes (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     rate REAL NOT NULL CHECK(rate >= 0),
     is_default INTEGER DEFAULT 0,
@@ -54,9 +54,9 @@ CREATE TABLE IF NOT EXISTS taxes (
     deleted_at TEXT
 );
 
--- 5. TARIFAS (LISTAS DE PRECIOS)
+-- 5. TARIFAS (LISTAS DE PRECIOS) - Synced from backend
 CREATE TABLE IF NOT EXISTS tariffs (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     is_tax_included INTEGER DEFAULT 1,
     priority INTEGER DEFAULT 0,
@@ -65,9 +65,9 @@ CREATE TABLE IF NOT EXISTS tariffs (
     deleted_at TEXT
 );
 
--- 6. CLIENTES
+-- 6. CLIENTES (Synced from backend)
 CREATE TABLE IF NOT EXISTS customers (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     code TEXT,
     tax_id TEXT,
     business_name TEXT,
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS customers (
     zip_code TEXT,
     email TEXT,
     phone TEXT,
-    tariff_uuid TEXT,                  -- VINCULACIÓN DE PRECIO (RETAIL / SOCIO)
+    tariff_id INTEGER,                  -- VINCULACIÓN DE PRECIO (RETAIL / SOCIO)
     is_credit_allowed INTEGER DEFAULT 0,
     tier_level TEXT,
     notes TEXT,
@@ -85,18 +85,18 @@ CREATE TABLE IF NOT EXISTS customers (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     deleted_at TEXT,
-    FOREIGN KEY(tariff_uuid) REFERENCES tariffs(uuid)
+    FOREIGN KEY(tariff_id) REFERENCES tariffs(id)
 );
 
--- 7. PRODUCTOS
+-- 7. PRODUCTOS (Synced from backend)
 CREATE TABLE IF NOT EXISTS products (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     reference TEXT UNIQUE,
     barcode TEXT,
     name TEXT NOT NULL,
     description TEXT,
     category TEXT,
-    tax_uuid TEXT NOT NULL,
+    tax_id INTEGER NOT NULL,
     requires_weight INTEGER DEFAULT 0,
     is_discountable INTEGER DEFAULT 1,
     is_refundable INTEGER DEFAULT 1,
@@ -108,23 +108,23 @@ CREATE TABLE IF NOT EXISTS products (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     deleted_at TEXT,
-    FOREIGN KEY(tax_uuid) REFERENCES taxes(uuid)
+    FOREIGN KEY(tax_id) REFERENCES taxes(id)
 );
 
--- 8. PRECIOS DE PRODUCTOS
+-- 8. PRECIOS DE PRODUCTOS (Synced from backend)
 CREATE TABLE IF NOT EXISTS product_prices (
-    product_uuid TEXT,
-    tariff_uuid TEXT,
+    product_id INTEGER,
+    tariff_id INTEGER,
     price REAL NOT NULL,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (product_uuid, tariff_uuid),
-    FOREIGN KEY(product_uuid) REFERENCES products(uuid),
-    FOREIGN KEY(tariff_uuid) REFERENCES tariffs(uuid)
+    PRIMARY KEY (product_id, tariff_id),
+    FOREIGN KEY(product_id) REFERENCES products(id),
+    FOREIGN KEY(tariff_id) REFERENCES tariffs(id)
 );
 
--- 9. PROMOCIONES
+-- 9. PROMOCIONES (Synced from backend)
 CREATE TABLE IF NOT EXISTS promotions (
-    uuid TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     type TEXT NOT NULL,
     start_date TEXT,
@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS promotions (
     deleted_at TEXT
 );
 
--- 10. VENTAS (CABECERA COMERCIAL)
+-- 10. VENTAS (CABECERA COMERCIAL) - POS Generated
 CREATE TABLE IF NOT EXISTS sales (
     uuid TEXT PRIMARY KEY,
     
@@ -158,8 +158,8 @@ CREATE TABLE IF NOT EXISTS sales (
     
     -- Contexto
     shift_uuid TEXT,
-    customer_uuid TEXT,
-    user_uuid TEXT NOT NULL,
+    customer_id INTEGER,
+    user_id INTEGER NOT NULL,
     
     -- Totales
     total_net REAL NOT NULL,
@@ -171,8 +171,8 @@ CREATE TABLE IF NOT EXISTS sales (
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY(shift_uuid) REFERENCES shifts(uuid),
-    FOREIGN KEY(customer_uuid) REFERENCES customers(uuid),
-    FOREIGN KEY(user_uuid) REFERENCES users(uuid),
+    FOREIGN KEY(customer_id) REFERENCES customers(id),
+    FOREIGN KEY(user_id) REFERENCES users(id),
     FOREIGN KEY(rectified_sale_uuid) REFERENCES sales(uuid)
 );
 
@@ -198,36 +198,36 @@ CREATE TABLE IF NOT EXISTS fiscal_records (
     UNIQUE(sale_uuid, record_type)
 );
 
--- 12. LÍNEAS DE VENTA
+-- 12. LÍNEAS DE VENTA - POS Generated
 CREATE TABLE IF NOT EXISTS sale_lines (
     uuid TEXT PRIMARY KEY,
     sale_uuid TEXT NOT NULL,
-    product_uuid TEXT,
+    product_id INTEGER,
     product_name TEXT NOT NULL,
     
     quantity REAL NOT NULL CHECK(quantity != 0),
     unit_price REAL NOT NULL,
     
     -- Snapshot Fiscal
-    tax_uuid TEXT,
+    tax_id INTEGER,
     tax_rate REAL NOT NULL,
     tax_amount REAL NOT NULL DEFAULT 0,
     
     discount_percent REAL DEFAULT 0,
     discount_amount REAL DEFAULT 0,
-    promotion_uuid TEXT,
+    promotion_id INTEGER,
     
     total_line REAL NOT NULL,
     
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(sale_uuid) REFERENCES sales(uuid) ON DELETE RESTRICT,
-    FOREIGN KEY(promotion_uuid) REFERENCES promotions(uuid)
+    FOREIGN KEY(promotion_id) REFERENCES promotions(id)
 );
 
--- 13. RESUMEN DE IMPUESTOS (SNAPSHOT)
+-- 13. RESUMEN DE IMPUESTOS (SNAPSHOT) - POS Generated
 CREATE TABLE IF NOT EXISTS sale_tax_summary (
     sale_uuid TEXT NOT NULL,
-    tax_uuid TEXT,
+    tax_id INTEGER,
     tax_name_snapshot TEXT NOT NULL,
     tax_rate_snapshot REAL NOT NULL,
     base_amount REAL NOT NULL,
