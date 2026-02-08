@@ -20,7 +20,7 @@ export class RegistrationService {
   /**
    * Preview registration: validate code and return store/user context.
    * 
-   * POST /api/v1/pos/registration/preview
+   * POST /api/v1/devices/setup/preview
    * 
    * @param code - Registration code to validate
    * @param deviceId - Device hardware ID
@@ -36,7 +36,7 @@ export class RegistrationService {
     };
 
     return await this.apiClient.post<PosRegistrationPreviewDto>(
-      '/api/v1/pos/registration/preview',
+      '/api/v1/devices/setup/preview',
       request
     );
   }
@@ -44,7 +44,7 @@ export class RegistrationService {
   /**
    * Confirm registration: create device and return configuration.
    * 
-   * POST /api/v1/pos/registration/confirm
+   * POST /api/v1/devices/setup/confirm
    * 
    * @param code - Registration code
    * @param hardwareId - Device hardware ID
@@ -60,7 +60,7 @@ export class RegistrationService {
     };
 
     return await this.apiClient.post<PosRegistrationResultDto>(
-      '/api/v1/pos/registration/confirm',
+      '/api/v1/devices/setup/confirm',
       request
     );
   }

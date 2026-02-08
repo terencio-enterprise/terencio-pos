@@ -8,9 +8,6 @@
 
 -- 1. CRITICAL PERFORMANCE SETTINGS
 PRAGMA journal_mode = WAL; -- Write-Ahead Logging (Non-blocking reads/writes)
-PRAGMA foreign_keys = ON;
-PRAGMA encoding = "UTF-8";
-PRAGMA synchronous = NORMAL; -- Balance between speed and safety
 
 -- ==================================================================================
 -- [A] CONFIGURATION & SYSTEM
@@ -42,7 +39,6 @@ CREATE TABLE IF NOT EXISTS app_settings (
 
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uuid TEXT UNIQUE NOT NULL,
     username TEXT UNIQUE NOT NULL,
     pin_hash TEXT NOT NULL,           -- Encrypted PIN for quick login
     full_name TEXT,

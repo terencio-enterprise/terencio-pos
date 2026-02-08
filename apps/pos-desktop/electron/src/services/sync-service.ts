@@ -52,9 +52,9 @@ export class SyncService {
   private savePosConfig(data: PosRegistrationResultDto, hardwareId: string) {
     const stmt = db!.prepare(`
       INSERT OR REPLACE INTO pos_config (
-        id, pos_uuid, pos_serial_code, store_id, license_key, verifactu_enabled, is_active, updated_at
+        id, pos_uuid, pos_serial_code, store_id, license_key, verifactu_enabled, updated_at
       ) VALUES (
-        1, @pos_uuid, @pos_serial_code, @store_id, @license_key, 1, 1, CURRENT_TIMESTAMP
+        1, @pos_uuid, @pos_serial_code, @store_id, @license_key, 1, CURRENT_TIMESTAMP
       )
     `);
 
@@ -70,9 +70,9 @@ export class SyncService {
   private saveUsers(users: UserDto[]) {
     const stmt = db!.prepare(`
       INSERT OR REPLACE INTO users (
-        id, uuid, username, pin_hash, full_name, role, is_active, created_at
+        id, username, pin_hash, full_name, role, is_active, created_at
       ) VALUES (
-        @id, @uuid, @username, @pin_hash, @full_name, @role, @is_active, CURRENT_TIMESTAMP
+        @id, @username, @pin_hash, @full_name, @role, @is_active, CURRENT_TIMESTAMP
       )
     `);
 
@@ -80,7 +80,6 @@ export class SyncService {
       for (const u of userList) {
         stmt.run({
           id: u.id,
-          uuid: u.uuid,
           username: u.username,
           pin_hash: u.pinHash, // Ensure backend sends BCrypt hash
           full_name: u.fullName,
